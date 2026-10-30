@@ -147,6 +147,9 @@ control válido), y un Code 128 si no. Los escáneres de caja leen ambos.
 
 ## Solución de problemas
 
+- **La pestaña Descubrimiento está vacía**: pulse **Probar la configuración**: busca
+  de nuevo en OpenStreetMap y dice por qué (casa sin ubicación, ningún tipo marcado,
+  OpenStreetMap inaccesible, ningún comercio de esos tipos en el radio).
 - **«Ningún comercio con este nombre ... en OpenStreetMap»**: pruebe con menos
   palabras, un **Radio de búsqueda** mayor, o escriba el horario a mano.
 - **«Ninguna casa de Gladys tiene ubicación»**: indique la ubicación de la casa en

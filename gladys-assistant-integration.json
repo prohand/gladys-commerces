@@ -339,7 +339,7 @@
         "de": "Konfiguration testen",
         "es": "Probar la configuración"
       },
-      "timeout_seconds": 10
+      "timeout_seconds": 75
     }
   ],
   "scene_triggers": [

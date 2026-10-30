@@ -270,3 +270,17 @@ test('discovery: only the houses picked, the created shops kept up to date', asy
   await finder.refresh({ radiusKm: 5, kinds: [], houses: ['campagne'], known: ['n202'] });
   assert.equal(finder.shop('n202').hours, 'Mo-Fr 09:00-19:00');
 });
+
+test('a busy Overpass: its partial answer is not kept, the next try is', async () => {
+  const { finder, fetch } = finderSetup();
+  finder.fetch = async () => ({
+    ok: true,
+    json: async () => ({ elements: [], remark: 'runtime error: Query timed out in "query"' }),
+  });
+  await finder.refresh({ radiusKm: 10, kinds: ['pharmacy'] });
+  assert.equal(finder.status.state, 'unreachable');
+  finder.fetch = fetch;
+  await finder.refresh({ radiusKm: 10, kinds: ['pharmacy'], force: true });
+  assert.equal(finder.status.state, 'ok');
+  assert.equal(finder.nearby.length, 2);
+});

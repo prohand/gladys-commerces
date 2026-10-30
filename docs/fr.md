@@ -151,6 +151,9 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 
 ## Dépannage
 
+- **L'onglet Découverte est vide** : cliquez sur **Tester la configuration** : il
+  cherche de nouveau sur OpenStreetMap et dit pourquoi (maison sans emplacement, aucun
+  type coché, OpenStreetMap injoignable, aucun commerce de ces types dans le rayon).
 - **« Aucun commerce de ce nom ... sur OpenStreetMap »** : essayez moins de mots, un
   **Rayon de recherche** plus grand, ou écrivez les horaires à la main.
 - **« Aucune maison de Gladys n'a d'emplacement »** : renseignez l'emplacement de la

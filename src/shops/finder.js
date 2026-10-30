@@ -177,7 +177,9 @@ export function overpassQuery({ searches = [], kinds = [], known = [], houses, r
       lines.push(`  ${type}(id:${ids.map((match) => match[2]).join(',')});`);
     }
   }
-  return `[out:json][timeout:50];\n(\n${lines.join('\n')}\n);\nout tags center;`;
+  // `out center`, not `out tags center`: the tags verbosity drops the
+  // coordinates of the nodes, and many shops are a node.
+  return `[out:json][timeout:50];\n(\n${lines.join('\n')}\n);\nout center;`;
 }
 
 /** Distance in meters between two points (haversine). */
@@ -336,6 +338,9 @@ export class HoursFinder {
     this.checkedAt = 0;
     this.failedAt = 0;
     this.loaded = false;
+    // How the last lookup went, for the test action: `idle` (never asked),
+    // `ok`, `no_house`, `no_access` or `unreachable` (with `message`).
+    this.status = { state: 'idle', houses: [] };
     this.running = null;
   }
 
@@ -359,6 +364,7 @@ export class HoursFinder {
    * @param {string[]} [request.kinds] the kinds to discover (SHOP_KINDS keys)
    * @param {string[]} [request.houses] the selectors of the houses (empty: all)
    * @param {string[]} [request.known] the keys of the shops created
+   * @param {boolean} [request.force] asked by the user: no wait after a failure
    * @returns {Promise<boolean>} whether the results changed
    */
   refresh(request) {
@@ -373,6 +379,7 @@ export class HoursFinder {
           kinds: unique(request.kinds).filter((kind) => kind in SHOP_KINDS),
           houses: unique(request.houses),
           known: unique(request.known).filter((key) => KEY.test(key)),
+          force: Boolean(request.force),
         }),
       )
       .finally(() => {
@@ -384,7 +391,7 @@ export class HoursFinder {
     return running;
   }
 
-  async lookup({ searches, radiusKm, kinds, houses: selectors, known }) {
+  async lookup({ searches, radiusKm, kinds, houses: selectors, known, force }) {
     if (searches.length === 0 && kinds.length === 0 && known.length === 0) {
       return false;
     }
@@ -405,12 +412,15 @@ export class HoursFinder {
     const houses = await locatedHouses(this.gladys, selectors);
     if (!houses || houses.length === 0) {
       const error = houses ? 'no_house' : 'no_access';
+      this.status = { state: error, houses: [] };
       this.results = Object.fromEntries(searches.map((search) => [search, { error }]));
       this.nearby = [];
       return changed();
     }
     const radius = radiusKm * 1000;
+    // `query` changes with the query: older results are looked up again.
     const signature = JSON.stringify({
+      query: 2,
       houses: houses.map((house) => [house.name, house.latitude, house.longitude]),
       radius,
       kinds,
@@ -433,9 +443,10 @@ export class HoursFinder {
       return changed();
     };
     if (!stale) {
+      this.status = { state: 'ok', houses: houses.map((house) => house.name) };
       return false;
     }
-    if (now - this.failedAt < RETRY_MS) {
+    if (!force && now - this.failedAt < RETRY_MS) {
       return lastAnswers();
     }
 
@@ -447,10 +458,16 @@ export class HoursFinder {
     } catch (err) {
       logger.warn(`OpenStreetMap lookup failed: ${err.message}`);
       this.failedAt = now;
+      this.status = {
+        state: 'unreachable',
+        message: err.message,
+        houses: houses.map((house) => house.name),
+      };
       // The hours found before stay: a shop rarely changes its hours.
       return lastAnswers();
     }
     this.failedAt = 0;
+    this.status = { state: 'ok', houses: houses.map((house) => house.name) };
     this.signature = signature;
     this.checkedAt = now;
     const found = nearestShops(elements, searches, houses, radius);
@@ -508,9 +525,14 @@ export class HoursFinder {
     if (!response.ok) {
       throw new Error(`Overpass answered ${response.status}`);
     }
-    const { elements } = await response.json();
+    const { elements, remark } = await response.json();
     if (!Array.isArray(elements)) {
       throw new Error('Overpass answered without elements');
+    }
+    // A busy server answers 200 with a remark (timeout, out of memory) and
+    // what it had time to find: not an answer to keep for a day.
+    if (remark && /error|timed out|timeout/i.test(remark)) {
+      throw new Error(`Overpass: ${remark}`);
     }
     return elements;
   }

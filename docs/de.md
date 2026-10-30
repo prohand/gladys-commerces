@@ -154,6 +154,9 @@ Prüfziffer), sonst ein Code 128. Kassenscanner lesen beide.
 
 ## Fehlerbehebung
 
+- **Der Reiter Erkennung ist leer**: Klicken Sie auf **Konfiguration testen**: Es
+  sucht erneut auf OpenStreetMap und sagt warum (Haus ohne Standort, keine Art
+  angekreuzt, OpenStreetMap nicht erreichbar, kein Geschäft dieser Arten im Radius).
 - **„Kein Geschäft dieses Namens ... auf OpenStreetMap“**: Versuchen Sie weniger
   Wörter, einen größeren **Suchradius** oder geben Sie die Zeiten von Hand ein.
 - **„Kein Haus von Gladys hat einen Standort“**: Legen Sie den Standort des Hauses

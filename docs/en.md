@@ -140,6 +140,9 @@ a Code 128 otherwise. Both are read by till scanners.
 
 ## Troubleshooting
 
+- **The Discovery tab is empty**: click **Test the configuration**: it looks again
+  on OpenStreetMap and says why (house without a location, no kind checked,
+  OpenStreetMap unreachable, no shop of these kinds within the radius).
 - **"No shop of this name ... on OpenStreetMap"**: try fewer words, a wider
   **Search radius**, or type the hours by hand.
 - **"No house of Gladys has a location"**: set the house location in **Settings →
