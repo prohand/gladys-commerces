@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { rollChangelog } from '../.github/scripts/changelog-release.mjs';
 
-const REPO = 'https://github.com/prohand/gladys-commerces';
+const REPO = 'https://github.com/prohand/gladys-horaires-commerces';
 
 test('the first release moves Unreleased under the version and links its tag', () => {
   const text = `# Changelog\n\n## [Unreleased]\n\n### Added\n\n- Everything.\n\n[Unreleased]: ${REPO}/commits/main\n`;

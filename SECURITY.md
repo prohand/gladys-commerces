@@ -15,7 +15,7 @@ Update the integration from the Gladys store before reporting an issue.
 Please do **not** open a public issue for a security problem.
 
 Report it privately through GitHub: open the **Security** tab of
-[prohand/gladys-commerces](https://github.com/prohand/gladys-commerces/security), then
+[prohand/gladys-horaires-commerces](https://github.com/prohand/gladys-horaires-commerces/security), then
 **Report a vulnerability**.
 
 Include, when you can:

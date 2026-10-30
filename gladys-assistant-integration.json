@@ -9,9 +9,9 @@
     "es": "Horario de sus comercios y sus tarjetas de fidelidad en el panel de Gladys."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/prohand/gladys-commerces:1.0.0",
+  "docker_image": "ghcr.io/prohand/gladys-horaires-commerces:1.0.0",
   "gladys_version": ">=5.3.0",
-  "cover_image": "https://raw.githubusercontent.com/prohand/gladys-commerces/main/cover.png",
+  "cover_image": "https://raw.githubusercontent.com/prohand/gladys-horaires-commerces/main/cover.png",
   "categories": ["services"],
   "keywords": [
     "commerces",
@@ -55,7 +55,7 @@
           }
         },
         {
-          "url": "https://github.com/prohand/gladys-commerces/blob/main/docs/en.md",
+          "url": "https://github.com/prohand/gladys-horaires-commerces/blob/main/docs/en.md",
           "label": {
             "en": "Documentation",
             "fr": "Documentation",
