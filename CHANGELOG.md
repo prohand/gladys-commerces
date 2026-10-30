@@ -10,6 +10,8 @@ the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-30
+
 ### Added
 
 - The OpenStreetMap lookups go through overpass.ch only, with your own free key
@@ -36,4 +38,5 @@ the version's GitHub Release.
   multi-arch image build, Release and GitHub releases workflows, Dependabot.
 - `SECURITY.md` and `CLAUDE.md`.
 
-[Unreleased]: https://github.com/prohand/gladys-horaires-commerces/commits/main
+[Unreleased]: https://github.com/prohand/gladys-horaires-commerces/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/prohand/gladys-horaires-commerces/releases/tag/v1.0.1
