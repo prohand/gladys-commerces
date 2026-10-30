@@ -51,10 +51,10 @@ export function overpassKey(value) {
 }
 
 /**
- * A little over the `[timeout:25]` of the query: a lookup around a few houses
- * takes seconds, and a busy server admits a short query sooner.
+ * A little over the `[timeout:50]` of the query, under the 60 s a query may
+ * last on the free plan of overpass.ch.
  */
-const TIMEOUT_MS = 30_000;
+const TIMEOUT_MS = 60_000;
 
 /** The nearest shops of each kind offered per house, in the Discovery tab. */
 export const PER_KIND = 3;
@@ -161,10 +161,26 @@ export function searchPattern(search) {
 }
 
 /**
- * The Overpass query, one for everything:
- *   - the shops with opening hours whose name or brand holds a search;
- *   - the named shops with opening hours of the kinds to discover;
- *   - the shops already created from the Discovery tab, by id.
+ * The box around a house, in the Overpass order (south,west,north,east). A
+ * box is read from the spatial index; a circle (`around`) made the server
+ * measure the distance to every way and timed out on a city. The shops in the
+ * corners are dropped afterwards: nearestShops and nearbyShops keep the radius.
+ */
+export function houseBox(house, radiusMeters) {
+  // 111 km a degree of latitude, a little under the true 111.2: never smaller than the circle.
+  const lat = radiusMeters / 111_000;
+  const lon = lat / Math.cos((house.latitude * Math.PI) / 180);
+  return [house.latitude - lat, house.longitude - lon, house.latitude + lat, house.longitude + lon]
+    .map((value) => Number(value.toFixed(5)))
+    .join(',');
+}
+
+/**
+ * The Overpass query, one for everything. The shops with opening hours in
+ * the boxes of the houses are read once, then filtered in that set:
+ *   - the ones whose name or brand holds a search;
+ *   - the named ones of the kinds to discover;
+ * and the shops already created from the Discovery tab are read by id.
  * Only constants, numbers and searchPattern reach it: nothing typed as is.
  */
 export function overpassQuery({ searches = [], kinds = [], known = [], houses, radiusMeters }) {
@@ -179,20 +195,17 @@ export function overpassQuery({ searches = [], kinds = [], known = [], houses, r
     group.values.push(...values);
     groups.set(id, group);
   }
-  for (const house of houses) {
-    const area = `(around:${radiusMeters},${house.latitude},${house.longitude})`;
-    if (pattern) {
-      for (const tag of ['name', 'brand']) {
-        lines.push(`  nwr["opening_hours"]["${tag}"~"${pattern}",i]${area};`);
-      }
-    }
-    for (const { tag, extra, values } of groups.values()) {
-      const more = extra ? `["${extra[0]}"="${extra[1]}"]` : '';
-      lines.push(
-        `  nwr["opening_hours"]["name"]["${tag}"~"^(${values.join('|')})$"]${more}${area};`,
-      );
+  if (pattern) {
+    for (const tag of ['name', 'brand']) {
+      lines.push(`  nwr.shops["${tag}"~"${pattern}",i];`);
     }
   }
+  for (const { tag, extra, values } of groups.values()) {
+    const more = extra ? `["${extra[0]}"="${extra[1]}"]` : '';
+    lines.push(`  nwr.shops["name"]["${tag}"~"^(${values.join('|')})$"]${more};`);
+  }
+  const boxes = houses.map((house) => `  nwr["opening_hours"](${houseBox(house, radiusMeters)});`);
+  const shops = lines.length > 0 ? `(\n${boxes.join('\n')}\n)->.shops;\n` : '';
   const types = { n: 'node', w: 'way', r: 'relation' };
   for (const [letter, type] of Object.entries(types)) {
     const ids = known.map((key) => KEY.exec(key)).filter((match) => match?.[1] === letter);
@@ -202,7 +215,7 @@ export function overpassQuery({ searches = [], kinds = [], known = [], houses, r
   }
   // `out center`, not `out tags center`: the tags verbosity drops the
   // coordinates of the nodes, and many shops are a node.
-  return `[out:json][timeout:25];\n(\n${lines.join('\n')}\n);\nout center;`;
+  return `[out:json][timeout:50];\n${shops}(\n${lines.join('\n')}\n);\nout center;`;
 }
 
 /** Distance in meters between two points (haversine). */
