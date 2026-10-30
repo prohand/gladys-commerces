@@ -3,30 +3,30 @@
   "type": "device",
   "name": "E.Leclerc",
   "description": {
-    "en": "Product recalls that concern your E.Leclerc store, and its opening hours.",
-    "fr": "Rappels de produits qui concernent votre magasin E.Leclerc, et ses horaires.",
-    "de": "Produktrückrufe, die Ihren E.Leclerc-Markt betreffen, und seine Öffnungszeiten.",
-    "es": "Avisos de retirada de productos de su tienda E.Leclerc, y su horario."
+    "en": "Opening hours of your E.Leclerc store and your loyalty cards on the dashboard.",
+    "fr": "Horaires de votre magasin E.Leclerc et vos cartes de fidélité sur le tableau de bord.",
+    "de": "Öffnungszeiten Ihres E.Leclerc-Markts und Ihre Kundenkarten auf dem Dashboard.",
+    "es": "Horario de su tienda E.Leclerc y sus tarjetas de fidelidad en el panel."
   },
   "version": "1.0.0",
   "docker_image": "ghcr.io/prohand/gladys-eleclerc:1.0.0",
   "gladys_version": ">=5.3.0",
   "cover_image": "https://raw.githubusercontent.com/prohand/gladys-eleclerc/main/cover.png",
-  "categories": ["services", "notifications"],
+  "categories": ["services"],
   "keywords": [
     "leclerc",
     "e.leclerc",
-    "rappel conso",
-    "rappel produit",
-    "product recall",
     "supermarché",
     "horaires",
     "opening hours",
+    "carte de fidélité",
+    "loyalty card",
+    "ticket leclerc",
     "code-barres",
     "magasin"
   ],
   "countries": ["FR"],
-  "transports": ["cloud"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
@@ -38,21 +38,12 @@
         "es": "Primeros pasos"
       },
       "description": {
-        "en": "Two things, with no account: the product recalls of RappelConso, the official French register, filtered for E.Leclerc, and the opening hours of your store. Type the hours as on its map page, e.g. Mo-Sa 08:30-20:00; PH off.",
-        "fr": "Deux choses, sans compte : les rappels de produits de RappelConso, le registre officiel français, filtrés pour E.Leclerc, et les horaires de votre magasin. Saisissez les horaires comme sur sa fiche de carte, ex. Mo-Sa 08:30-20:00; PH off.",
-        "de": "Zwei Dinge, ohne Konto: die Produktrückrufe von RappelConso, dem offiziellen französischen Register, gefiltert für E.Leclerc, und die Öffnungszeiten Ihres Markts. Geben Sie die Zeiten wie auf seiner Kartenseite ein, z. B. Mo-Sa 08:30-20:00; PH off.",
-        "es": "Dos cosas, sin cuenta: los avisos de retirada de RappelConso, el registro oficial francés, filtrados para E.Leclerc, y el horario de su tienda. Escriba el horario como en su ficha del mapa, p. ej. Mo-Sa 08:30-20:00; PH off."
+        "en": "Everything is computed in Gladys, with no account: the opening hours you type, and your loyalty cards, whose barcode the dashboard shows at the till. E.Leclerc has no public API: the card balance is the one you enter.",
+        "fr": "Tout est calculé dans Gladys, sans compte : les horaires que vous saisissez, et vos cartes de fidélité, dont le tableau de bord affiche le code-barres en caisse. E.Leclerc n'a pas d'API publique : la cagnotte est celle que vous saisissez.",
+        "de": "Alles wird in Gladys berechnet, ohne Konto: die Öffnungszeiten, die Sie eingeben, und Ihre Kundenkarten, deren Barcode das Dashboard an der Kasse zeigt. E.Leclerc hat keine öffentliche API: Das Guthaben ist das, das Sie eingeben.",
+        "es": "Todo se calcula en Gladys, sin cuenta: el horario que usted escribe, y sus tarjetas de fidelidad, cuyo código de barras muestra el panel en caja. E.Leclerc no tiene API pública: el saldo es el que usted introduce."
       },
       "links": [
-        {
-          "url": "https://rappel.conso.gouv.fr/",
-          "label": {
-            "en": "RappelConso",
-            "fr": "RappelConso",
-            "de": "RappelConso",
-            "es": "RappelConso"
-          }
-        },
         {
           "url": "https://wiki.openstreetmap.org/wiki/Key:opening_hours",
           "label": {
@@ -152,444 +143,53 @@
       "max": 180
     },
     {
-      "key": "recalls_section",
+      "key": "cards_section",
       "type": "section",
       "label": {
-        "en": "Product recalls",
-        "fr": "Rappels de produits",
-        "de": "Produktrückrufe",
-        "es": "Avisos de retirada"
+        "en": "Loyalty cards",
+        "fr": "Cartes de fidélité",
+        "de": "Kundenkarten",
+        "es": "Tarjetas de fidelidad"
+      },
+      "description": {
+        "en": "One card per person: a name, an equals sign, the number printed under the barcode. Cards separated by a semicolon.",
+        "fr": "Une carte par personne : un nom, un signe égal, le numéro imprimé sous le code-barres. Cartes séparées par un point-virgule.",
+        "de": "Eine Karte pro Person: ein Name, ein Gleichheitszeichen, die unter dem Barcode gedruckte Nummer. Karten durch Semikolon getrennt.",
+        "es": "Una tarjeta por persona: un nombre, un signo igual, el número impreso bajo el código de barras. Tarjetas separadas por punto y coma."
       }
     },
     {
-      "key": "recall_scope",
-      "type": "select",
+      "key": "loyalty_cards",
+      "type": "string",
       "label": {
-        "en": "Recalls to follow",
-        "fr": "Rappels à suivre",
-        "de": "Zu verfolgende Rückrufe",
-        "es": "Avisos a seguir"
+        "en": "Card numbers",
+        "fr": "Numéros de carte",
+        "de": "Kartennummern",
+        "es": "Números de tarjeta"
+      },
+      "placeholder": {
+        "en": "e.g. Marie=2900123456785; Paul=2900987654327",
+        "fr": "ex. Marie=2900123456785; Paul=2900987654327",
+        "de": "z. B. Marie=2900123456785; Paul=2900987654327",
+        "es": "p. ej. Marie=2900123456785; Paul=2900987654327"
       },
       "required": false,
-      "default": "all",
-      "options": [
-        {
-          "value": "all",
-          "label": {
-            "en": "E.Leclerc and all retailers",
-            "fr": "E.Leclerc et tous distributeurs",
-            "de": "E.Leclerc und alle Händler",
-            "es": "E.Leclerc y todos los distribuidores"
-          }
-        },
-        {
-          "value": "leclerc",
-          "label": {
-            "en": "Only those naming E.Leclerc",
-            "fr": "Seulement ceux qui citent E.Leclerc",
-            "de": "Nur die, die E.Leclerc nennen",
-            "es": "Solo los que citan E.Leclerc"
-          }
-        }
-      ]
-    },
-    {
-      "key": "recall_categories",
-      "type": "multi_select",
-      "label": {
-        "en": "Categories (empty: all)",
-        "fr": "Catégories (vide : toutes)",
-        "de": "Kategorien (leer: alle)",
-        "es": "Categorías (vacío: todas)"
-      },
-      "required": false,
-      "options": [
-        {
-          "value": "food",
-          "label": {
-            "en": "Food",
-            "fr": "Alimentation",
-            "de": "Lebensmittel",
-            "es": "Alimentación"
-          }
-        },
-        {
-          "value": "baby",
-          "label": {
-            "en": "Baby & children",
-            "fr": "Bébés-Enfants",
-            "de": "Baby & Kinder",
-            "es": "Bebés y niños"
-          }
-        },
-        {
-          "value": "hygiene",
-          "label": {
-            "en": "Hygiene & beauty",
-            "fr": "Hygiène-Beauté",
-            "de": "Hygiene & Schönheit",
-            "es": "Higiene y belleza"
-          }
-        },
-        {
-          "value": "pets",
-          "label": {
-            "en": "Pets",
-            "fr": "Animaux",
-            "de": "Haustiere",
-            "es": "Animales"
-          }
-        },
-        {
-          "value": "home",
-          "label": {
-            "en": "Home",
-            "fr": "Maison-Habitat",
-            "de": "Haus & Wohnen",
-            "es": "Hogar"
-          }
-        },
-        {
-          "value": "electrical",
-          "label": {
-            "en": "Appliances & tools",
-            "fr": "Appareils électriques, outils",
-            "de": "Elektrogeräte & Werkzeug",
-            "es": "Aparatos y herramientas"
-          }
-        },
-        {
-          "value": "clothing",
-          "label": {
-            "en": "Clothing",
-            "fr": "Vêtements, mode",
-            "de": "Kleidung",
-            "es": "Ropa"
-          }
-        },
-        {
-          "value": "leisure",
-          "label": {
-            "en": "Sports & leisure",
-            "fr": "Sports-loisirs",
-            "de": "Sport & Freizeit",
-            "es": "Deporte y ocio"
-          }
-        },
-        {
-          "value": "vehicles",
-          "label": {
-            "en": "Vehicles",
-            "fr": "Automobiles",
-            "de": "Fahrzeuge",
-            "es": "Vehículos"
-          }
-        },
-        {
-          "value": "other",
-          "label": {
-            "en": "Other",
-            "fr": "Autres",
-            "de": "Sonstiges",
-            "es": "Otros"
-          }
-        }
-      ]
-    },
-    {
-      "key": "recall_days",
-      "type": "number",
-      "label": {
-        "en": "Recalls of the last (days)",
-        "fr": "Rappels des derniers (jours)",
-        "de": "Rückrufe der letzten (Tage)",
-        "es": "Avisos de los últimos (días)"
-      },
-      "required": false,
-      "default": 30,
-      "min": 1,
-      "max": 90
-    },
-    {
-      "key": "refresh_interval",
-      "type": "number",
-      "label": {
-        "en": "Refresh interval (min)",
-        "fr": "Intervalle de rafraîchissement (min)",
-        "de": "Aktualisierungsintervall (Min.)",
-        "es": "Intervalo de actualización (min)"
-      },
-      "description": {
-        "en": "How often RappelConso is read, in minutes.",
-        "fr": "Fréquence de lecture de RappelConso, en minutes.",
-        "de": "Wie oft RappelConso gelesen wird, in Minuten.",
-        "es": "Con qué frecuencia se lee RappelConso, en minutos."
-      },
-      "required": false,
-      "default": 60,
-      "min": 15,
-      "max": 1440
+      "default": ""
     }
   ],
   "actions": [
     {
-      "key": "test_connection",
+      "key": "test_configuration",
       "label": {
         "en": "Test the configuration",
         "fr": "Tester la configuration",
         "de": "Konfiguration testen",
         "es": "Probar la configuración"
       },
-      "timeout_seconds": 60
-    },
-    {
-      "key": "check_barcode",
-      "label": {
-        "en": "Check a barcode",
-        "fr": "Vérifier un code-barres",
-        "de": "Barcode prüfen",
-        "es": "Comprobar un código de barras"
-      },
-      "timeout_seconds": 30,
-      "fields": [
-        {
-          "key": "barcode",
-          "type": "string",
-          "label": {
-            "en": "Barcode",
-            "fr": "Code-barres",
-            "de": "Barcode",
-            "es": "Código de barras"
-          },
-          "description": {
-            "en": "The 8 or 13 digits under the bars of the product.",
-            "fr": "Les 8 ou 13 chiffres sous les barres du produit.",
-            "de": "Die 8 oder 13 Ziffern unter den Strichen des Produkts.",
-            "es": "Las 8 o 13 cifras bajo las barras del producto."
-          },
-          "placeholder": {
-            "en": "e.g. 3017620422003",
-            "fr": "ex. 3017620422003",
-            "de": "z. B. 3017620422003",
-            "es": "p. ej. 3017620422003"
-          },
-          "required": true
-        }
-      ]
+      "timeout_seconds": 10
     }
   ],
   "scene_triggers": [
-    {
-      "key": "product_recalled",
-      "label": {
-        "en": "A product sold at E.Leclerc is recalled",
-        "fr": "Un produit vendu chez E.Leclerc est rappelé",
-        "de": "Ein bei E.Leclerc verkauftes Produkt wird zurückgerufen",
-        "es": "Se retira un producto vendido en E.Leclerc"
-      },
-      "description": {
-        "en": "A new RappelConso notice concerns your store.",
-        "fr": "Une nouvelle fiche RappelConso concerne votre magasin.",
-        "de": "Eine neue RappelConso-Meldung betrifft Ihren Markt.",
-        "es": "Una nueva ficha de RappelConso afecta a su tienda."
-      },
-      "fields": [
-        {
-          "key": "category",
-          "type": "multi_select",
-          "label": {
-            "en": "Category",
-            "fr": "Catégorie",
-            "de": "Kategorie",
-            "es": "Categoría"
-          },
-          "options": [
-            {
-              "value": "food",
-              "label": {
-                "en": "Food",
-                "fr": "Alimentation",
-                "de": "Lebensmittel",
-                "es": "Alimentación"
-              }
-            },
-            {
-              "value": "baby",
-              "label": {
-                "en": "Baby & children",
-                "fr": "Bébés-Enfants",
-                "de": "Baby & Kinder",
-                "es": "Bebés y niños"
-              }
-            },
-            {
-              "value": "hygiene",
-              "label": {
-                "en": "Hygiene & beauty",
-                "fr": "Hygiène-Beauté",
-                "de": "Hygiene & Schönheit",
-                "es": "Higiene y belleza"
-              }
-            },
-            {
-              "value": "pets",
-              "label": {
-                "en": "Pets",
-                "fr": "Animaux",
-                "de": "Haustiere",
-                "es": "Animales"
-              }
-            },
-            {
-              "value": "home",
-              "label": {
-                "en": "Home",
-                "fr": "Maison-Habitat",
-                "de": "Haus & Wohnen",
-                "es": "Hogar"
-              }
-            },
-            {
-              "value": "electrical",
-              "label": {
-                "en": "Appliances & tools",
-                "fr": "Appareils électriques, outils",
-                "de": "Elektrogeräte & Werkzeug",
-                "es": "Aparatos y herramientas"
-              }
-            },
-            {
-              "value": "clothing",
-              "label": {
-                "en": "Clothing",
-                "fr": "Vêtements, mode",
-                "de": "Kleidung",
-                "es": "Ropa"
-              }
-            },
-            {
-              "value": "leisure",
-              "label": {
-                "en": "Sports & leisure",
-                "fr": "Sports-loisirs",
-                "de": "Sport & Freizeit",
-                "es": "Deporte y ocio"
-              }
-            },
-            {
-              "value": "vehicles",
-              "label": {
-                "en": "Vehicles",
-                "fr": "Automobiles",
-                "de": "Fahrzeuge",
-                "es": "Vehículos"
-              }
-            },
-            {
-              "value": "other",
-              "label": {
-                "en": "Other",
-                "fr": "Autres",
-                "de": "Sonstiges",
-                "es": "Otros"
-              }
-            }
-          ]
-        },
-        {
-          "key": "sold_at",
-          "type": "multi_select",
-          "label": {
-            "en": "Sold at",
-            "fr": "Vendu chez",
-            "de": "Verkauft bei",
-            "es": "Vendido en"
-          },
-          "options": [
-            {
-              "value": "leclerc",
-              "label": {
-                "en": "E.Leclerc named",
-                "fr": "E.Leclerc cité",
-                "de": "E.Leclerc genannt",
-                "es": "E.Leclerc citado"
-              }
-            },
-            {
-              "value": "all_retailers",
-              "label": {
-                "en": "All retailers",
-                "fr": "Tous distributeurs",
-                "de": "Alle Händler",
-                "es": "Todos los distribuidores"
-              }
-            }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "product",
-          "type": "string",
-          "label": {
-            "en": "Product",
-            "fr": "Produit",
-            "de": "Produkt",
-            "es": "Producto"
-          }
-        },
-        {
-          "key": "brand",
-          "type": "string",
-          "label": {
-            "en": "Brand",
-            "fr": "Marque",
-            "de": "Marke",
-            "es": "Marca"
-          }
-        },
-        {
-          "key": "reason",
-          "type": "string",
-          "label": {
-            "en": "Reason",
-            "fr": "Motif",
-            "de": "Grund",
-            "es": "Motivo"
-          }
-        },
-        {
-          "key": "risks",
-          "type": "string",
-          "label": {
-            "en": "Risks",
-            "fr": "Risques",
-            "de": "Risiken",
-            "es": "Riesgos"
-          }
-        },
-        {
-          "key": "link",
-          "type": "string",
-          "label": {
-            "en": "Notice link",
-            "fr": "Lien de la fiche",
-            "de": "Link zur Meldung",
-            "es": "Enlace de la ficha"
-          }
-        },
-        {
-          "key": "reference",
-          "type": "string",
-          "label": {
-            "en": "Notice number",
-            "fr": "Numéro de fiche",
-            "de": "Meldungsnummer",
-            "es": "Número de ficha"
-          }
-        }
-      ]
-    },
     {
       "key": "store_opening_soon",
       "label": {
@@ -687,89 +287,6 @@
   ],
   "scene_actions": [
     {
-      "key": "check_barcode",
-      "label": {
-        "en": "Check a barcode",
-        "fr": "Vérifier un code-barres",
-        "de": "Barcode prüfen",
-        "es": "Comprobar un código de barras"
-      },
-      "description": {
-        "en": "Look a product up in RappelConso.",
-        "fr": "Cherche un produit dans RappelConso.",
-        "de": "Sucht ein Produkt in RappelConso.",
-        "es": "Busca un producto en RappelConso."
-      },
-      "timeout_seconds": 30,
-      "fields": [
-        {
-          "key": "barcode",
-          "type": "string",
-          "label": {
-            "en": "Barcode",
-            "fr": "Code-barres",
-            "de": "Barcode",
-            "es": "Código de barras"
-          },
-          "description": {
-            "en": "The 8 or 13 digits under the bars of the product.",
-            "fr": "Les 8 ou 13 chiffres sous les barres du produit.",
-            "de": "Die 8 oder 13 Ziffern unter den Strichen des Produkts.",
-            "es": "Las 8 o 13 cifras bajo las barras del producto."
-          },
-          "placeholder": {
-            "en": "e.g. 3017620422003",
-            "fr": "ex. 3017620422003",
-            "de": "z. B. 3017620422003",
-            "es": "p. ej. 3017620422003"
-          },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "recalled",
-          "type": "boolean",
-          "label": {
-            "en": "Recalled",
-            "fr": "Rappelé",
-            "de": "Zurückgerufen",
-            "es": "Retirado"
-          }
-        },
-        {
-          "key": "product",
-          "type": "string",
-          "label": {
-            "en": "Product",
-            "fr": "Produit",
-            "de": "Produkt",
-            "es": "Producto"
-          }
-        },
-        {
-          "key": "reason",
-          "type": "string",
-          "label": {
-            "en": "Reason",
-            "fr": "Motif",
-            "de": "Grund",
-            "es": "Motivo"
-          }
-        },
-        {
-          "key": "link",
-          "type": "string",
-          "label": {
-            "en": "Notice link",
-            "fr": "Lien de la fiche",
-            "de": "Link zur Meldung",
-            "es": "Enlace de la ficha"
-          }
-        }
-      ]
-    },
-    {
       "key": "is_store_open",
       "label": {
         "en": "Is the store open?",
@@ -816,6 +333,93 @@
           }
         }
       ]
+    },
+    {
+      "key": "set_loyalty_balance",
+      "label": {
+        "en": "Update a loyalty card balance",
+        "fr": "Mettre à jour une cagnotte",
+        "de": "Guthaben einer Kundenkarte ändern",
+        "es": "Actualizar el saldo de una tarjeta"
+      },
+      "description": {
+        "en": "Set the balance of a card, or add an amount to it (negative to spend).",
+        "fr": "Fixe la cagnotte d'une carte, ou y ajoute un montant (négatif pour dépenser).",
+        "de": "Setzt das Guthaben einer Karte oder addiert einen Betrag (negativ zum Ausgeben).",
+        "es": "Fija el saldo de una tarjeta, o le suma un importe (negativo para gastar)."
+      },
+      "timeout_seconds": 10,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Loyalty card",
+            "fr": "Carte de fidélité",
+            "de": "Kundenkarte",
+            "es": "Tarjeta de fidelidad"
+          },
+          "required": true
+        },
+        {
+          "key": "mode",
+          "type": "select",
+          "label": {
+            "en": "Operation",
+            "fr": "Opération",
+            "de": "Vorgang",
+            "es": "Operación"
+          },
+          "required": false,
+          "default": "set",
+          "options": [
+            {
+              "value": "set",
+              "label": {
+                "en": "Set the balance to",
+                "fr": "Fixer la cagnotte à",
+                "de": "Guthaben setzen auf",
+                "es": "Fijar el saldo en"
+              }
+            },
+            {
+              "value": "add",
+              "label": {
+                "en": "Add to the balance",
+                "fr": "Ajouter à la cagnotte",
+                "de": "Zum Guthaben addieren",
+                "es": "Sumar al saldo"
+              }
+            }
+          ]
+        },
+        {
+          "key": "amount",
+          "type": "number",
+          "label": {
+            "en": "Amount (€)",
+            "fr": "Montant (€)",
+            "de": "Betrag (€)",
+            "es": "Importe (€)"
+          },
+          "required": true,
+          "min": -100000,
+          "max": 100000
+        }
+      ],
+      "outputs": [
+        {
+          "key": "balance",
+          "type": "number",
+          "label": {
+            "en": "New balance (€)",
+            "fr": "Nouvelle cagnotte (€)",
+            "de": "Neues Guthaben (€)",
+            "es": "Nuevo saldo (€)"
+          }
+        }
+      ]
     }
   ],
   "widgets": [
@@ -836,43 +440,35 @@
       "icon": "shopping-cart"
     },
     {
-      "key": "product_recalls",
+      "key": "loyalty_card",
       "label": {
-        "en": "Product recalls",
-        "fr": "Rappels de produits",
-        "de": "Produktrückrufe",
-        "es": "Avisos de retirada"
+        "en": "Loyalty card",
+        "fr": "Carte de fidélité",
+        "de": "Kundenkarte",
+        "es": "Tarjeta de fidelidad"
       },
       "description": {
-        "en": "The latest recalls for your store, and a barcode check.",
-        "fr": "Les derniers rappels pour votre magasin, et la vérification d'un code-barres.",
-        "de": "Die neuesten Rückrufe für Ihren Markt und eine Barcode-Prüfung.",
-        "es": "Los últimos avisos para su tienda, y la comprobación de un código."
+        "en": "The card's barcode to scan at the till, and its balance.",
+        "fr": "Le code-barres de la carte à scanner en caisse, et sa cagnotte.",
+        "de": "Der Barcode der Karte zum Scannen an der Kasse, und ihr Guthaben.",
+        "es": "El código de barras de la tarjeta para la caja, y su saldo."
       },
-      "icon": "alert-triangle",
+      "icon": "credit-card",
       "settings": [
         {
-          "key": "count",
-          "type": "number",
+          "key": "card",
+          "type": "select",
+          "source": "devices",
           "label": {
-            "en": "Recalls shown",
-            "fr": "Rappels affichés",
-            "de": "Angezeigte Rückrufe",
-            "es": "Avisos mostrados"
+            "en": "Card (empty: the first one)",
+            "fr": "Carte (vide : la première)",
+            "de": "Karte (leer: die erste)",
+            "es": "Tarjeta (vacío: la primera)"
           },
-          "description": {
-            "en": "How many recalls are listed (0 to 8).",
-            "fr": "Nombre de rappels listés (0 à 8).",
-            "de": "Wie viele Rückrufe aufgelistet werden (0 bis 8).",
-            "es": "Cuántos avisos se listan (0 a 8)."
-          },
-          "required": false,
-          "default": 5,
-          "min": 0,
-          "max": 8
+          "required": false
         }
       ],
-      "action_timeout_seconds": 30
+      "action_timeout_seconds": 15
     }
   ]
 }

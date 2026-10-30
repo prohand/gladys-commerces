@@ -8,14 +8,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { DEFAULT_CONFIG, LIMITS, RECALL_SCOPES } from '../src/config.js';
+import { DEFAULT_CONFIG, LIMITS } from '../src/config.js';
 import { ACTIONS } from '../src/capabilities/actions.js';
-import { SCENE_ACTIONS, SCENE_TRIGGERS, SOLD_AT } from '../src/capabilities/scenes.js';
-import { RECALL_WIDGET_ACTIONS, WIDGET_KEYS } from '../src/capabilities/widgets.js';
-import { recallEvent } from '../src/leclerc/recallFeed.js';
-import { parseRecall, RECALL_CATEGORIES } from '../src/leclerc/recalls.js';
+import { BALANCE_MODES, SCENE_ACTIONS, SCENE_TRIGGERS } from '../src/capabilities/scenes.js';
+import { CARD_WIDGET_ACTIONS, WIDGET_KEYS } from '../src/capabilities/widgets.js';
+import { MAX_BALANCE } from '../src/devices/index.js';
+import { parseCards } from '../src/leclerc/cards.js';
 import { LANGUAGES } from '../src/i18n.js';
-import { v2Record } from './helpers/fixtures.js';
 
 const read = async (path) => readFile(new URL(path, import.meta.url), 'utf8');
 const manifest = JSON.parse(await read('../gladys-assistant-integration.json'));
@@ -30,10 +29,9 @@ test('version and image tag agree with package.json', () => {
   );
 });
 
-test('a cloud integration, for France, on Gladys 5.3 or later', () => {
-  // RappelConso is read on the internet; the hours are computed locally but
-  // reach nothing on the LAN: there is no local channel to prefer.
-  assert.deepEqual(manifest.transports, ['cloud']);
+test('a local integration, for France, on Gladys 5.3 or later', () => {
+  // Everything is computed in the container: no third-party service is called.
+  assert.deepEqual(manifest.transports, ['local']);
   assert.deepEqual(manifest.countries, ['FR']);
   assert.equal(manifest.gladys_version, '>=5.3.0');
 });
@@ -45,23 +43,10 @@ test('name, description, categories and keywords follow the store rules', () => 
     assert.ok(length >= 10 && length <= 100, `description.${language}: ${length}`);
   }
   const vocabulary = [
-    'climate',
-    'lighting',
-    'energy',
-    'security',
-    'multimedia',
-    'appliances',
-    'environment',
-    'protocols',
-    'network',
-    'notifications',
-    'assistants',
-    'services',
-    'transport',
-    'vehicles',
-    'servers',
-    'leisure',
-  ];
+    'climate', 'lighting', 'energy', 'security', 'multimedia', 'appliances', 'environment',
+    'protocols', 'network', 'notifications', 'assistants', 'services', 'transport', 'vehicles',
+    'servers', 'leisure',
+  ]; // prettier-ignore
   assert.ok(manifest.categories.length >= 1 && manifest.categories.length <= 3);
   for (const category of manifest.categories) {
     assert.ok(vocabulary.includes(category), category);
@@ -87,30 +72,15 @@ test('every stored config key has its default and bounds in the code', () => {
       assert.deepEqual(LIMITS[field.key], [field.min, field.max], field.key);
     }
   }
-  assert.deepEqual(
-    manifest.config_schema
-      .find((f) => f.key === 'recall_scope')
-      .options.map((o) => o.value)
-      .sort(),
-    Object.values(RECALL_SCOPES).sort(),
-  );
 });
 
-test('every category option is a category the code knows, and the other way round', () => {
-  const lists = [
-    manifest.config_schema.find((f) => f.key === 'recall_categories'),
-    manifest.scene_triggers
-      .find((t) => t.key === 'product_recalled')
-      .fields.find((f) => f.key === 'category'),
-  ];
-  for (const field of lists) {
-    assert.deepEqual(
-      field.options.map((o) => o.value),
-      Object.keys(RECALL_CATEGORIES),
-    );
-    for (const option of field.options) {
-      assert.deepEqual(option.label, RECALL_CATEGORIES[option.value].label);
-    }
+test('the example card numbers of the placeholder are valid', () => {
+  const field = manifest.config_schema.find((f) => f.key === 'loyalty_cards');
+  for (const language of LANGUAGES) {
+    const example = field.placeholder[language].replace(/^\S+\s+/, '');
+    const { cards, errors } = parseCards(example);
+    assert.deepEqual(errors, [], language);
+    assert.equal(cards.length, 2, language);
   }
 });
 
@@ -126,18 +96,7 @@ test('the scene triggers are the ones the code fires, with the data they declare
     manifest.scene_triggers.map((trigger) => trigger.key).sort(),
     Object.values(SCENE_TRIGGERS).sort(),
   );
-  const recalled = manifest.scene_triggers.find((t) => t.key === SCENE_TRIGGERS.PRODUCT_RECALLED);
-  const declared = [...recalled.fields, ...recalled.variables].map((f) => f.key).sort();
-  assert.deepEqual(Object.keys(recallEvent(parseRecall(v2Record()))).sort(), declared);
-  assert.deepEqual(
-    recalled.fields
-      .find((f) => f.key === 'sold_at')
-      .options.map((o) => o.value)
-      .sort(),
-    Object.values(SOLD_AT).sort(),
-  );
-  for (const key of [SCENE_TRIGGERS.STORE_OPENING_SOON, SCENE_TRIGGERS.STORE_CLOSING_SOON]) {
-    const trigger = manifest.scene_triggers.find((t) => t.key === key);
+  for (const trigger of manifest.scene_triggers) {
     assert.deepEqual(trigger.variables.map((v) => v.key).sort(), [
       'minutes_left',
       'store_name',
@@ -151,6 +110,11 @@ test('the scene actions are the ones the code handles', () => {
     manifest.scene_actions.map((action) => action.key).sort(),
     Object.values(SCENE_ACTIONS).sort(),
   );
+  const balance = manifest.scene_actions.find((a) => a.key === SCENE_ACTIONS.set_loyalty_balance);
+  const mode = balance.fields.find((f) => f.key === 'mode');
+  assert.deepEqual(mode.options.map((o) => o.value).sort(), Object.values(BALANCE_MODES).sort());
+  const amount = balance.fields.find((f) => f.key === 'amount');
+  assert.deepEqual([amount.min, amount.max], [-MAX_BALANCE, MAX_BALANCE]);
 });
 
 test('the widgets are the ones the code renders', () => {
@@ -158,7 +122,7 @@ test('the widgets are the ones the code renders', () => {
     manifest.widgets.map((widget) => widget.key).sort(),
     Object.values(WIDGET_KEYS).sort(),
   );
-  assert.deepEqual(Object.values(RECALL_WIDGET_ACTIONS).sort(), ['check_barcode', 'refresh']);
+  assert.deepEqual(Object.values(CARD_WIDGET_ACTIONS), ['set_balance']);
   for (const widget of manifest.widgets) {
     for (const language of LANGUAGES) {
       assert.ok(widget.label[language].length >= 3 && widget.label[language].length <= 30);
@@ -186,6 +150,10 @@ test('every field uses a type the store accepts', () => {
     if (field.min !== undefined || field.max !== undefined) {
       assert.equal(field.type, 'number', field.key);
     }
+    if (field.source !== undefined) {
+      assert.equal(field.source, 'devices');
+      assert.equal(field.options, undefined, `${field.key}: source and options together`);
+    }
   }
 });
 
@@ -206,7 +174,7 @@ function multiLanguageTexts(node, path = 'manifest') {
 
 test('every text of the manifest is in English, French, German and Spanish', () => {
   const texts = multiLanguageTexts(manifest);
-  assert.ok(texts.length > 80, `only ${texts.length} texts found`);
+  assert.ok(texts.length > 40, `only ${texts.length} texts found`);
   for (const { path, text } of texts) {
     assert.deepEqual(Object.keys(text).sort(), [...LANGUAGES].sort(), path);
     for (const language of LANGUAGES) {
@@ -222,5 +190,6 @@ test('the user documentation exists in the four languages', async () => {
     for (const key of [...Object.values(SCENE_TRIGGERS), ...Object.values(SCENE_ACTIONS)]) {
       assert.ok(text.includes(key), `docs/${language}.md does not name ${key}`);
     }
+    assert.ok(!/rappel ?conso/i.test(text), `docs/${language}.md still talks about recalls`);
   }
 });

@@ -1,33 +1,30 @@
 # E.Leclerc — guía de uso
 
-Esta integración trae a Gladys dos datos de su tienda E.Leclerc:
+Esta integración trae a Gladys dos cosas de E.Leclerc:
 
-- los **avisos de retirada de productos**: los de RappelConso, el registro oficial
-  francés, que afectan a un producto vendido en E.Leclerc;
-- el **horario**: si su tienda está abierta, y cuándo abre o cierra.
+- el **horario** de su tienda: si está abierta, y cuándo abre o cierra;
+- sus **tarjetas de fidelidad** (Carte E.Leclerc): su código de barras en el panel,
+  para escanearlo en caja desde el móvil, y su saldo.
 
-Sin cuenta ni clave de API. Es una integración comunitaria: E.Leclerc no la hace,
-no la revisa ni le da soporte.
+Todo se calcula en Gladys: sin cuenta, sin contraseña, nada se envía a internet. Es
+una integración comunitaria: E.Leclerc no la hace, no la revisa ni le da soporte.
 
 ## Instalación
 
 Abra **Integraciones**, busque **E.Leclerc**, instálela y rellene la pantalla
 **Configuración**.
 
-| Campo                            | Qué poner                                                                               |
-| -------------------------------- | --------------------------------------------------------------------------------------- |
-| Nombre de la tienda              | El nombre del dispositivo tienda en Gladys, p. ej. `E.Leclerc Carcassonne`.             |
-| Horario de apertura              | El horario de la tienda (ver abajo). Por defecto: `Mo-Sa 08:30-20:00; PH off`.          |
-| Aviso antes de ... (min)         | Cuándo se activan «abre pronto» / «cierra pronto». Por defecto: 30 min.                 |
-| Avisos a seguir                  | _E.Leclerc y todos los distribuidores_ (por defecto), o _solo los que citan E.Leclerc_. |
-| Categorías                       | Vacío para seguirlas todas, o elija algunas (alimentación, animales…).                  |
-| Avisos de los últimos (días)     | Cuántos días abarcan el contador y la lista. Por defecto: 30.                           |
-| Intervalo de actualización (min) | Con qué frecuencia se lee RappelConso. Por defecto: 60 minutos.                         |
+| Campo                    | Qué poner                                                                      |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| Nombre de la tienda      | El nombre del dispositivo tienda en Gladys, p. ej. `E.Leclerc Carcassonne`.    |
+| Horario de apertura      | El horario de la tienda (ver abajo). Por defecto: `Mo-Sa 08:30-20:00; PH off`. |
+| Aviso antes de ... (min) | Cuándo se activan «abre pronto» / «cierra pronto». Por defecto: 30 min.        |
+| Números de tarjeta       | Sus tarjetas de fidelidad (ver abajo). Vacío si no tiene ninguna.              |
 
 Pulse después **Probar la configuración**: la respuesta dice si la tienda está
-abierta y cuántos avisos le afectan.
+abierta y qué tarjetas se han entendido.
 
-Por último, abra la pestaña **Descubrimiento** de la integración y cree los dos
+Por último, abra la pestaña **Descubrimiento** de la integración y cree los
 dispositivos.
 
 ### Horario de apertura
@@ -48,69 +45,72 @@ sintaxis de OpenStreetMap — a menudo ya visible en la ficha de la tienda en un
 Días en inglés: `Mo Tu We Th Fr Sa Su`. `PH` = festivos franceses (lunes de Pascua,
 Ascensión y lunes de Pentecostés incluidos). Las horas se leen en hora de París.
 
-### Qué avisos
+### Tarjetas de fidelidad
 
-Cada ficha indica quién vendió el producto. La integración conserva:
+Una tarjeta por persona: un nombre, `=`, y el número impreso bajo el código de barras
+de la tarjeta. Separe las tarjetas con `;`:
 
-- las fichas que **citan E.Leclerc**;
-- con _E.Leclerc y todos los distribuidores_, también las vendidas «en todos los
-  distribuidores», «en supermercados» (GMS)…: E.Leclerc también las vendió, aunque
-  no se le cite.
+```
+Marie=2900123456785; Paul=2900987654327
+```
+
+Los espacios y guiones del número se ignoran; el nombre es opcional. 10 tarjetas como
+máximo.
+
+**Sobre el saldo.** E.Leclerc no ofrece una API pública para sus tarjetas: el saldo
+«Ticket E.Leclerc» no se puede leer automáticamente sin su contraseña, mediante una
+interfaz no oficial que puede dejar de funcionar en cualquier momento. La integración
+no lo hace. Usted introduce el saldo — desde el widget o una escena — y Gladys lo
+guarda, con su historial.
 
 ## Dispositivos
 
-| Dispositivo               | Función                            | Notas                                       |
-| ------------------------- | ---------------------------------- | ------------------------------------------- |
-| Tienda                    | Abierta (1 = abierta, 0 = cerrada) | Utilizable en cualquier condición de escena |
-| Tienda                    | Minutos hasta abrir o cerrar       | Actualizado cada minuto                     |
-| E.Leclerc product recalls | Avisos                             | Número en el periodo configurado            |
-| E.Leclerc product recalls | Último aviso                       | «Marca – producto»                          |
-
-El dispositivo de avisos muestra una insignia **cloud** cuando RappelConso ha
-respondido, e **inaccesible** si no.
+| Dispositivo               | Función                            | Notas                                            |
+| ------------------------- | ---------------------------------- | ------------------------------------------------ |
+| Tienda                    | Abierta (1 = abierta, 0 = cerrada) | Utilizable en cualquier condición de escena      |
+| Tienda                    | Minutos hasta abrir o cerrar       | Actualizado cada minuto                          |
+| E.Leclerc card _<nombre>_ | Saldo (€)                          | Introducido por usted; utilizable en condiciones |
 
 ## Escenas
 
 ### Disparadores
 
-- **Se retira un producto vendido en E.Leclerc** (`product_recalled`): una nueva
-  ficha afecta a su tienda. Filtros: categoría y _vendido en_ (E.Leclerc citado /
-  todos los distribuidores). Variables: producto, marca, motivo, riesgos, enlace y
-  número de ficha. Ejemplo: envíese el mensaje «Aviso: {{product}} — {{reason}}».
 - **La tienda abre pronto** (`store_opening_soon`) y **La tienda cierra pronto**
-  (`store_closing_soon`): una sola vez, los minutos configurados antes.
-  Variables: nombre de la tienda, hora, minutos restantes.
+  (`store_closing_soon`): una sola vez, los minutos configurados antes. Variables:
+  nombre de la tienda, hora, minutos restantes. Ejemplo: «La tienda cierra a las
+  {{time}}, quedan {{minutes_left}} minutos.»
 
-Un aviso se anuncia una sola vez. Los ya publicados al instalar no se anuncian; los
-publicados mientras Gladys estaba apagado sí, en el siguiente arranque.
+«La tienda está abierta» y «el saldo supera 10 €» son estados: use las condiciones
+de dispositivo de Gladys.
 
 ### Acciones
 
-- **Comprobar un código de barras** (`check_barcode`): busca un producto en todo el
-  registro RappelConso. Salidas: _retirado_ (sí/no), producto, motivo, enlace.
-- **¿Está abierta la tienda?** (`is_store_open`): salidas _abierta_ (sí/no), la
-  hora del próximo cambio (HH:MM) y los minutos hasta entonces.
+- **¿Está abierta la tienda?** (`is_store_open`): salidas _abierta_ (sí/no), la hora
+  del próximo cambio (HH:MM) y los minutos hasta entonces.
+- **Actualizar el saldo de una tarjeta** (`set_loyalty_balance`): elija una tarjeta y
+  luego _fijar el saldo en_ un importe, o _sumar al saldo_ (un importe negativo para
+  gastar). Salida: el nuevo saldo. Nunca baja de 0.
 
 ## Panel
 
 - **Horario de la tienda**: abierta o cerrada, hasta cuándo, horario de hoy.
-- **Avisos de retirada**: el contador, los últimos avisos (toque uno para ver el
-  motivo, los riesgos, qué hacer y la ficha), un botón **Comprobar un código** y un
-  botón **Actualizar**. El ajuste _Avisos mostrados_ fija la longitud de la lista
-  (0 a 8).
+- **Tarjeta de fidelidad**: el código de barras de una tarjeta (ajuste _Tarjeta_;
+  vacío = la primera), su saldo y su número, y un botón **Actualizar el saldo**.
+  Muéstrelo en caja: suba el brillo del móvil para el escáner.
+
+El código es un EAN-13 cuando el número de tarjeta lo es (13 cifras, dígito de
+control válido), y un Code 128 si no. Los escáneres de caja leen ambos.
 
 ## Solución de problemas
 
 - **«No se entiende el horario»**: el mensaje cita la parte errónea. Use los días en
   inglés (`Mo`, no `Lu`) y horas `HH:MM` (`08:30`, no `8.30`).
-- **RappelConso no responde**: la integración necesita internet. Vuelve a
-  intentarlo en el siguiente intervalo; la última lista sigue visible.
-- **No se encuentra un código de barras**: solo se encuentran los códigos impresos
-  en la ficha. Compruebe también [rappel.conso.gouv.fr](https://rappel.conso.gouv.fr/).
+- **Una tarjeta «no se entiende»**: el número debe tener de 6 a 20 cifras.
+  **Probar la configuración** lista lo que no se ha entendido.
+- **La caja no lee el código**: compruebe el número, suba el brillo y amplíe el
+  widget. Si su tarjeta lleva otro tipo de código de barras, indíquelo en una issue.
 
 ## Datos
 
-- Avisos: [RappelConso](https://rappel.conso.gouv.fr/), datos abiertos del
-  Ministerio de Economía francés (data.economie.gouv.fr), Licence Ouverte.
-- No se envía nada sobre usted: solo el código comprobado se busca en línea. La
-  integración guarda la lista de avisos ya vistos en su volumen `/data`.
+Nada sale de su Gladys. Los saldos se guardan en el volumen `/data` de la integración
+(`cards.json`) y como estados de Gladys.

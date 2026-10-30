@@ -26,8 +26,8 @@ COPY index.js ./
 COPY src ./src
 COPY gladys-assistant-integration.json ./
 
-# The only writable location: the memory of the recalls already seen lives
-# there. Owned by `node`, and before VOLUME (changes after it are discarded).
+# The only writable location: the balances of the loyalty cards live there.
+# Owned by `node`, and before VOLUME (changes after it are discarded).
 ENV NODE_ENV=production
 RUN mkdir -p /data && chown node:node /data
 VOLUME ["/data"]

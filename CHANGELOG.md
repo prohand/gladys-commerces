@@ -12,16 +12,14 @@ the version's GitHub Release.
 
 ### Added
 
-- Product recalls from RappelConso (French open data) that concern E.Leclerc: those
-  naming E.Leclerc, and optionally those sold by all retailers; filter by category.
-- Store opening hours in the OpenStreetMap syntax, with French public holidays.
-- Devices: the store (open, minutes until it opens or closes) and the recalls
-  (count, latest recall), with a cloud / unreachable transport badge.
-- Scene triggers: a product sold at E.Leclerc is recalled, the store opens soon,
-  the store closes soon.
-- Scene actions: check a barcode, is the store open.
-- Dashboard widgets: store hours, product recalls (with a barcode form).
-- Configuration-screen actions: test the configuration, check a barcode.
+- Store opening hours in the OpenStreetMap syntax, with French public holidays: a
+  store device (open, minutes until it opens or closes).
+- Loyalty cards (Carte E.Leclerc): one device per card with its balance, entered by
+  the user; the card's barcode (EAN-13 or Code 128) on the dashboard.
+- Scene triggers: the store opens soon, the store closes soon.
+- Scene actions: is the store open, update a loyalty card balance (set or add).
+- Dashboard widgets: store hours, loyalty card (barcode, balance, update form).
+- Configuration-screen action: test the configuration.
 - English, French, German and Spanish for every text and the documentation.
 - CI (Prettier, ESLint, tests on Node 22 and 24, store checks, Docker build),
   multi-arch image build, Release and GitHub releases workflows, Dependabot.

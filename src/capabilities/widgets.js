@@ -2,8 +2,8 @@
 // Dashboard widgets (Gladys 5.1+).
 //
 //   - `store_hours`: is the store open, until when, and today's hours;
-//   - `product_recalls`: the latest recalls that concern the store, a form to
-//     check a barcode, and a refresh button.
+//   - `loyalty_card`: a loyalty card's barcode, to scan at the till from a
+//     phone, its balance, and a form to update that balance.
 //
 // The content is declarative (the core renders it, no HTML): see the
 // "Dashboard widgets" section of the SDK README for the vocabulary and the
@@ -14,27 +14,26 @@
 // -----------------------------------------------------------------------------
 
 import { createLogger, WIDGET_COLORS } from '@gladysassistant/integration-sdk';
-import { localize, pick } from '../i18n.js';
-import { categoryLabel, describeFeed, title } from '../leclerc/recallFeed.js';
+import { MAX_BALANCE } from '../devices/index.js';
+import { barcodePng, cardModules } from '../leclerc/barcode.js';
+import { formatNumber } from '../leclerc/cards.js';
 import { describeHoursError, describeToday, describeWhen } from '../leclerc/store.js';
-import { checkBarcode, describeCheck } from './barcode.js';
 
 const logger = createLogger({ name: 'widgets' });
 
-export const WIDGET_KEYS = { STORE_HOURS: 'store_hours', PRODUCT_RECALLS: 'product_recalls' };
+export const WIDGET_KEYS = { STORE_HOURS: 'store_hours', LOYALTY_CARD: 'loyalty_card' };
 
-export const RECALL_WIDGET_ACTIONS = { CHECK_BARCODE: 'check_barcode', REFRESH: 'refresh' };
+export const CARD_WIDGET_ACTIONS = { SET_BALANCE: 'set_balance' };
 
-/** How many recalls the list shows when the instance says nothing. */
-export const DEFAULT_RECALLS_SHOWN = 5;
-/** A `list` card-list holds 8 rows at most. */
-const MAX_RECALLS_SHOWN = 8;
-
-const RAPPEL_CONSO_URL = 'https://rappel.conso.gouv.fr/';
+const IMAGE_PREFIX = 'card-';
 
 const clip = (text, length) => (text.length > length ? `${text.slice(0, length - 1)}…` : text);
 
-/** The content of the `store_hours` widget. */
+/** "12.50 €" in the reader's language. */
+export function formatEuros(amount, language) {
+  return new Intl.NumberFormat(language, { style: 'currency', currency: 'EUR' }).format(amount);
+}
+
 export function buildStoreWidget({ store, language = 'en' }) {
   const status = store.status();
   if (!status) {
@@ -89,164 +88,142 @@ export function buildStoreWidget({ store, language = 'en' }) {
   return { ttl_seconds: 60, components };
 }
 
-/** How many recalls an instance lists. */
-function recallsShown(settings) {
-  const value = Number(settings?.count ?? DEFAULT_RECALLS_SHOWN);
-  return Number.isFinite(value)
-    ? Math.min(MAX_RECALLS_SHOWN, Math.max(0, Math.round(value)))
-    : DEFAULT_RECALLS_SHOWN;
+/** The card an instance shows: the one chosen in its settings, else the first. */
+function chosenCard(wallet, settings) {
+  return (settings?.card && wallet.find(settings.card)) || wallet.cards[0] || null;
 }
 
-/** One recall as a row of the list; the detail panel carries the notice. */
-function recallItem(recall, language) {
-  const lines = [
-    [{ en: 'Reason', fr: 'Motif', de: 'Grund', es: 'Motivo' }, recall.reason],
-    [{ en: 'Risks', fr: 'Risques', de: 'Risiken', es: 'Riesgos' }, recall.risks],
-    [{ en: 'What to do', fr: 'Que faire', de: 'Was tun', es: 'Qué hacer' }, recall.advice],
-    [
-      { en: 'Sold at', fr: 'Distributeurs', de: 'Verkauft bei', es: 'Vendido en' },
-      recall.retailers,
-    ],
-  ]
-    .filter(([, text]) => text)
-    // French puts a space before the colon.
-    .map(([label, text]) => `${pick(language, label)}${language === 'fr' ? ' :' : ':'} ${text}`);
-  const item = {
-    title: clip(title(recall), 60),
-    subtitle: clip(categoryLabel(recall.categoryKey, language), 60),
-    badge: {
-      text: clip(categoryLabel(recall.categoryKey, language), 16),
-      color: recall.namesLeclerc ? WIDGET_COLORS.DANGER : WIDGET_COLORS.WARNING,
-    },
-    description: clip(lines.join('\n'), 2000),
-  };
-  if (recall.publishedAt) {
-    item.date = recall.publishedAt;
+/** The content of the `loyalty_card` widget. */
+export function buildCardWidget({ wallet, settings = {}, language = 'en' }) {
+  const card = chosenCard(wallet, settings);
+  if (!card) {
+    return {
+      ttl_seconds: 3600,
+      components: [
+        {
+          type: 'text',
+          variant: 'body',
+          text: {
+            en: 'No loyalty card yet: add its number in the Configuration screen of the integration.',
+            fr: "Aucune carte de fidélité : ajoutez son numéro dans l'écran Configuration de l'intégration.",
+            de: 'Noch keine Kundenkarte: Tragen Sie ihre Nummer im Bildschirm Konfiguration der Integration ein.',
+            es: 'Aún no hay tarjeta de fidelidad: añada su número en la pantalla Configuración de la integración.',
+          },
+        },
+      ],
+    };
   }
-  if (recall.link.startsWith('https://')) {
-    item.links = [
+  const known = wallet.balanceOf(card);
+  const { symbology } = cardModules(card.number);
+  return {
+    // The content only changes with a new balance, which nudges the widget.
+    ttl_seconds: 3600,
+    components: [
+      { type: 'text', variant: 'heading', text: clip(`E.Leclerc · ${card.name}`, 40) },
       {
-        url: recall.link,
+        type: 'image',
+        // The bytes only depend on the number: the key may stay the same.
+        key: `${IMAGE_PREFIX}${card.number}`,
+        alt: {
+          en: `Barcode of the card ${card.name}`,
+          fr: `Code-barres de la carte ${card.name}`,
+          de: `Barcode der Karte ${card.name}`,
+          es: `Código de barras de la tarjeta ${card.name}`,
+        },
+        fit: 'contain',
+      },
+      {
+        type: 'value',
+        value: known ? clip(formatEuros(known.balance, language), 12) : '—',
+        label: { en: 'Balance', fr: 'Cagnotte', de: 'Guthaben', es: 'Saldo' },
+        icon: 'credit-card',
+        color: WIDGET_COLORS.PRIMARY,
+      },
+      {
+        type: 'text',
+        variant: 'caption',
+        text: clip(`${formatNumber(card.number)} · ${symbology}`, 80),
+      },
+      {
+        type: 'button',
         label: {
-          en: 'Recall notice',
-          fr: 'Fiche de rappel',
-          de: 'Rückrufmeldung',
-          es: 'Ficha del aviso',
+          en: 'Update the balance',
+          fr: 'Modifier la cagnotte',
+          de: 'Guthaben aktualisieren',
+          es: 'Actualizar el saldo',
+        },
+        icon: 'edit-2',
+        style: 'primary',
+        action: {
+          key: CARD_WIDGET_ACTIONS.SET_BALANCE,
+          params: { card: card.number },
+          fields: [
+            {
+              key: 'balance',
+              type: 'number',
+              required: true,
+              min: 0,
+              max: MAX_BALANCE,
+              ...(known && { default: known.balance }),
+              label: {
+                en: 'Balance (€)',
+                fr: 'Cagnotte (€)',
+                de: 'Guthaben (€)',
+                es: 'Saldo (€)',
+              },
+            },
+          ],
         },
       },
-    ];
-  }
-  return item;
+    ],
+  };
 }
 
-/** The content of the `product_recalls` widget. */
-export function buildRecallsWidget({ feed, settings = {}, language = 'en' }) {
-  const components = [];
-  if (feed.lastError && !feed.lastSuccess) {
-    components.push({
-      type: 'text',
-      variant: 'caption',
-      text: {
-        en: 'RappelConso cannot be reached yet.',
-        fr: 'RappelConso est injoignable pour le moment.',
-        de: 'RappelConso ist noch nicht erreichbar.',
-        es: 'RappelConso aún no responde.',
-      },
-    });
+/** The PNG of an image key the card widget declared, as raw base64. */
+export function cardImage(wallet, imageKey) {
+  const card = imageKey.startsWith(IMAGE_PREFIX)
+    ? wallet.find(imageKey.slice(IMAGE_PREFIX.length))
+    : null;
+  if (!card) {
+    throw new Error(`Unknown image: ${imageKey}`);
   }
-  components.push({
-    type: 'value',
-    value: feed.recalls.length,
-    label: localize((lang) =>
-      pick(lang, {
-        en: `Recalls, ${feed.config.recall_days} days`,
-        fr: `Rappels, ${feed.config.recall_days} jours`,
-        de: `Rückrufe, ${feed.config.recall_days} Tage`,
-        es: `Avisos, ${feed.config.recall_days} días`,
-      }),
-    ),
-    icon: 'alert-triangle',
-    color: feed.recalls.length > 0 ? WIDGET_COLORS.WARNING : WIDGET_COLORS.SUCCESS,
-  });
-  const shown = recallsShown(settings);
-  if (shown > 0 && feed.recalls.length > 0) {
-    components.push({
-      type: 'card-list',
-      display: 'list',
-      items: feed.recalls.slice(0, shown).map((recall) => recallItem(recall, language)),
-    });
-  }
-  components.push(
-    {
-      type: 'button',
-      label: {
-        en: 'Check a barcode',
-        fr: 'Vérifier un code-barres',
-        de: 'Barcode prüfen',
-        es: 'Comprobar un código',
-      },
-      icon: 'search',
-      style: 'primary',
-      action: {
-        key: RECALL_WIDGET_ACTIONS.CHECK_BARCODE,
-        fields: [
-          {
-            key: 'barcode',
-            type: 'string',
-            required: true,
-            label: {
-              en: 'Barcode (8 or 13 digits)',
-              fr: 'Code-barres (8 ou 13 chiffres)',
-              de: 'Barcode (8 oder 13 Ziffern)',
-              es: 'Código de barras (8 o 13 cifras)',
-            },
-          },
-        ],
-      },
-    },
-    {
-      type: 'button',
-      label: { en: 'Refresh', fr: 'Actualiser', de: 'Aktualisieren', es: 'Actualizar' },
-      icon: 'refresh-cw',
-      style: 'secondary',
-      action: { key: RECALL_WIDGET_ACTIONS.REFRESH },
-    },
-    {
-      type: 'button',
-      label: { en: 'RappelConso', fr: 'RappelConso', de: 'RappelConso', es: 'RappelConso' },
-      icon: 'external-link',
-      style: 'secondary',
-      link: { url: RAPPEL_CONSO_URL },
-    },
-  );
-  return { ttl_seconds: 300, components };
+  return barcodePng(card.number).toString('base64');
 }
 
 /**
  * The widget handlers, keyed by widget key: `get` for onWidgetGet, `action`
  * for onWidgetAction.
  */
-export function widgetHandlers({ store, feed, find }) {
+export function widgetHandlers({ store, wallet }) {
   return {
     [WIDGET_KEYS.STORE_HOURS]: {
       get: ({ language }) => buildStoreWidget({ store, language }),
     },
-    [WIDGET_KEYS.PRODUCT_RECALLS]: {
-      get: ({ settings, language }) => buildRecallsWidget({ feed, settings, language }),
-      async action(actionKey, _params, { values } = {}) {
-        logger.info(`Widget action product_recalls.${actionKey}`);
-        if (actionKey === RECALL_WIDGET_ACTIONS.CHECK_BARCODE) {
-          if (!values?.barcode) {
-            // An older core drops the form and relays the tap alone.
-            throw new Error('This Gladys is too old for the barcode form: update Gladys.');
-          }
-          return describeCheck(await checkBarcode(values.barcode, { find }), 200);
+    [WIDGET_KEYS.LOYALTY_CARD]: {
+      async get({ settings, language }) {
+        await wallet.load();
+        return buildCardWidget({ wallet, settings, language });
+      },
+      async action(actionKey, params, { values } = {}) {
+        logger.info(`Widget action loyalty_card.${actionKey}`);
+        if (actionKey !== CARD_WIDGET_ACTIONS.SET_BALANCE) {
+          throw new Error(`Unknown widget action: ${actionKey}`);
         }
-        if (actionKey === RECALL_WIDGET_ACTIONS.REFRESH) {
-          await feed.refresh();
-          return describeFeed(feed);
+        if (values?.balance === undefined) {
+          // An older core drops the form and relays the tap alone.
+          throw new Error('This Gladys is too old for the balance form: update Gladys.');
         }
-        throw new Error(`Unknown widget action: ${actionKey}`);
+        const card = wallet.find(params?.card);
+        if (!card) {
+          throw new Error('This card is no longer in the configuration.');
+        }
+        const balance = await wallet.setBalance(card, values.balance);
+        return {
+          en: `Balance of ${card.name}: ${formatEuros(balance, 'en')}`,
+          fr: `Cagnotte de ${card.name} : ${formatEuros(balance, 'fr')}`,
+          de: `Guthaben von ${card.name}: ${formatEuros(balance, 'de')}`,
+          es: `Saldo de ${card.name}: ${formatEuros(balance, 'es')}`,
+        };
       },
     },
   };

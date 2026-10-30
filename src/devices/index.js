@@ -1,16 +1,14 @@
 // -----------------------------------------------------------------------------
-// The two devices of the integration.
+// The devices of the integration.
 //
 //   - the STORE: is it open (a read-only switch, 1 = open), and the minutes
 //     until it opens or closes — computed locally from the opening hours;
-//   - the RECALLS: how many product recalls concern the store over the
-//     configured window, and the title of the latest one — read from the
-//     RappelConso open data.
+//   - one device per LOYALTY CARD: its balance in euros, set by the user.
 //
 // The external ids are forever (Gladys keys devices, history, scenes and
-// dashboards on them): there is one store and one recall feed per
-// integration, so their platform ids are fixed words, never a label the user
-// can change.
+// dashboards on them): there is one store per integration, so its platform id
+// is a fixed word; a card is identified by its number, never by the name the
+// user gives it.
 // -----------------------------------------------------------------------------
 
 import {
@@ -23,16 +21,15 @@ import {
 export const FEATURES = {
   OPEN: 'open',
   NEXT_CHANGE: 'next_change',
-  RECALL_COUNT: 'count',
-  LAST_RECALL: 'last',
+  BALANCE: 'balance',
 };
 
 export function storeIds(gladys) {
   return gladys.externalIds('store', 'main');
 }
 
-export function recallIds(gladys) {
-  return gladys.externalIds('recalls', 'rappelconso');
+export function cardIds(gladys, number) {
+  return gladys.externalIds('card', number);
 }
 
 /** Upper bound of the "minutes until" feature: the week and a day looked ahead. */
@@ -73,38 +70,38 @@ export function buildStoreDevice(gladys, config) {
   };
 }
 
-export function buildRecallsDevice(gladys) {
-  const ids = recallIds(gladys);
+/** Upper bound of a balance, in euros. */
+export const MAX_BALANCE = 100000;
+
+export function buildCardDevice(gladys, card) {
+  const ids = cardIds(gladys, card.number);
   return {
-    name: 'E.Leclerc product recalls',
+    name: `E.Leclerc card ${card.name}`,
     external_id: ids.device,
     features: [
       {
-        name: 'Recalls',
-        external_id: ids.feature(FEATURES.RECALL_COUNT),
-        category: DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR,
-        type: DEVICE_FEATURE_TYPES.SENSOR.INTEGER,
+        name: 'Balance',
+        external_id: ids.feature(FEATURES.BALANCE),
+        category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
+        type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
+        unit: DEVICE_FEATURE_UNITS.EURO,
         min: 0,
-        max: 10000,
+        max: MAX_BALANCE,
+        // Set from the widget or a scene action, never from the device card:
+        // a read-only feature keeps Gladys from sending it a command.
         read_only: true,
         has_feedback: false,
         keep_history: true,
-      },
-      {
-        name: 'Latest recall',
-        external_id: ids.feature(FEATURES.LAST_RECALL),
-        category: DEVICE_FEATURE_CATEGORIES.TEXT,
-        type: DEVICE_FEATURE_TYPES.TEXT.TEXT,
-        min: 0,
-        max: 0,
-        read_only: true,
-        has_feedback: false,
-        keep_history: false,
       },
     ],
   };
 }
 
-export function buildDiscoveredDevices(gladys, config) {
-  return [buildStoreDevice(gladys, config), buildRecallsDevice(gladys)];
+/**
+ * @param {object} gladys
+ * @param {object} config normalized configuration
+ * @param {Array<{ number: string, name: string }>} cards the cards of the wallet
+ */
+export function buildDiscoveredDevices(gladys, config, cards = []) {
+  return [buildStoreDevice(gladys, config), ...cards.map((card) => buildCardDevice(gladys, card))];
 }

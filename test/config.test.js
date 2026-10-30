@@ -7,26 +7,16 @@ test('an empty configuration is the defaults', () => {
   assert.deepEqual(normalizeConfig({ store_name: '  ', opening_hours: '' }), DEFAULT_CONFIG);
 });
 
-test('numbers typed as text are read, clamped to the manifest bounds', () => {
-  const config = normalizeConfig({ notice_minutes: '45', recall_days: 500, refresh_interval: 1 });
-  assert.equal(config.notice_minutes, 45);
-  assert.equal(config.recall_days, 90);
-  assert.equal(config.refresh_interval, 15);
-  assert.equal(normalizeConfig({ recall_days: 'abc' }).recall_days, 30);
-  assert.equal(normalizeConfig({ recall_days: '' }).recall_days, 30);
-});
-
-test('unknown scopes and categories fall back, a comma list is accepted', () => {
-  assert.equal(normalizeConfig({ recall_scope: 'nope' }).recall_scope, 'all');
-  assert.deepEqual(normalizeConfig({ recall_categories: ['food', 'nope'] }).recall_categories, [
-    'food',
-  ]);
-  assert.deepEqual(normalizeConfig({ recall_categories: 'food, pets' }).recall_categories, [
-    'food',
-    'pets',
-  ]);
+test('the notice typed as text is read, clamped to the manifest bounds', () => {
+  assert.equal(normalizeConfig({ notice_minutes: '45' }).notice_minutes, 45);
+  assert.equal(normalizeConfig({ notice_minutes: 500 }).notice_minutes, 180);
+  assert.equal(normalizeConfig({ notice_minutes: 1 }).notice_minutes, 5);
+  assert.equal(normalizeConfig({ notice_minutes: 'abc' }).notice_minutes, 30);
+  assert.equal(normalizeConfig({ notice_minutes: '' }).notice_minutes, 30);
 });
 
 test('texts are trimmed', () => {
-  assert.equal(normalizeConfig({ store_name: ' E.Leclerc Albi ' }).store_name, 'E.Leclerc Albi');
+  const config = normalizeConfig({ store_name: ' E.Leclerc Albi ', loyalty_cards: ' A=12345678 ' });
+  assert.equal(config.store_name, 'E.Leclerc Albi');
+  assert.equal(config.loyalty_cards, 'A=12345678');
 });

@@ -32,22 +32,21 @@ the integration, and the advisory is published once users can update.
 In scope: the code of this repository and the Docker image it publishes.
 
 Out of scope: Gladys Assistant itself (report to
-[GladysAssistant/Gladys](https://github.com/GladysAssistant/Gladys/security)),
-E.Leclerc services, and the RappelConso open data and API
-(data.economie.gouv.fr).
+[GladysAssistant/Gladys](https://github.com/GladysAssistant/Gladys/security)) and
+E.Leclerc services.
 
 ## How the integration limits its exposure
 
-- It holds no secret: no account, no API key, no password.
-- It only calls `https://data.economie.gouv.fr` (read-only, public data). The only
-  user input sent there is a barcode being checked, kept to its digits.
-- It writes one file, `/data/recalls-seen.json` (notice numbers only), in the one
-  writable volume; the image runs as a non-root user on a read-only root filesystem.
-- Texts from the register are shown through the Gladys widget vocabulary, which
-  escapes them: no HTML is ever rendered.
+- It holds no secret and makes no network call: no account, no API key, no password.
+  It never asks for an E.Leclerc password.
+- Loyalty card numbers stay in the Gladys configuration and in the integration's
+  `/data/cards.json` (numbers and balances only); the image runs as a non-root user on
+  a read-only root filesystem.
+- The barcode image is generated in the container from the configured numbers only;
+  an image key that is not a configured card is refused.
 
 ## Good practices for users
 
 - Keep Gladys and the integration up to date.
-- A recall notice is authoritative only on
-  [rappel.conso.gouv.fr](https://rappel.conso.gouv.fr/): follow its link before acting.
+- A loyalty card barcode shown on a dashboard can be scanned by anyone who sees it:
+  do not put that widget on a dashboard displayed in a public place.

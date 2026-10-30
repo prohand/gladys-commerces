@@ -1,13 +1,14 @@
 # E.Leclerc — user guide
 
-This integration brings two things about your E.Leclerc store into Gladys:
+This integration brings two things about E.Leclerc into Gladys:
 
-- **product recalls**: the recalls of RappelConso, the official French register,
-  that concern a product sold at E.Leclerc;
-- **opening hours**: whether your store is open, and when it opens or closes.
+- the **opening hours** of your store: is it open, and when does it open or close;
+- your **loyalty cards** (Carte E.Leclerc): their barcode on the dashboard, to scan
+  at the till from your phone, and their balance.
 
-No account and no API key are needed. This is a community integration: it is not
-made, checked or supported by E.Leclerc.
+Everything is computed in Gladys: no account, no password, nothing sent on the
+internet. This is a community integration: it is not made, checked or supported by
+E.Leclerc.
 
 ## Set up
 
@@ -19,15 +20,12 @@ Open **Integrations**, find **E.Leclerc**, install it, then fill in the
 | Store name              | The name of the store device in Gladys, e.g. `E.Leclerc Carcassonne`.      |
 | Opening hours           | The hours of your store (see below). Default: `Mo-Sa 08:30-20:00; PH off`. |
 | Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.  |
-| Recalls to follow       | _E.Leclerc and all retailers_ (default), or _only those naming E.Leclerc_. |
-| Categories              | Leave empty to follow every category, or pick some (food, pets, baby…).    |
-| Recalls of the last     | How many days the counter and the list look back. Default: 30.             |
-| Refresh interval (min)  | How often RappelConso is read. Default: 60 minutes.                        |
+| Card numbers            | Your loyalty cards (see below). Leave empty if you have none.              |
 
-Then click **Test the configuration**: the answer says whether the store is open
-and how many recalls concern it.
+Then click **Test the configuration**: the answer says whether the store is open and
+which cards were understood.
 
-Finally, open the **Discovery** tab of the integration and create the two devices.
+Finally, open the **Discovery** tab of the integration and create the devices.
 
 ### Opening hours
 
@@ -44,72 +42,75 @@ OpenStreetMap syntax — often already shown on the store's map page:
 | `...; PH 09:00-12:30`               | Shorter hours on public holidays               |
 | `24/7`                              | Always open                                    |
 
-Days: `Mo Tu We Th Fr Sa Su`. `PH` = French public holidays (Easter, Ascension
-and Whit Monday included). Hours are read on the French clock.
+Days: `Mo Tu We Th Fr Sa Su`. `PH` = French public holidays (Easter Monday,
+Ascension and Whit Monday included). Hours are read on the French clock.
 
-### Which recalls
+### Loyalty cards
 
-Each recall notice lists who sold the product. The integration keeps:
+One card per person: a name, `=`, then the number printed under the barcode of the
+card. Separate the cards with `;`:
 
-- the notices that **name E.Leclerc**;
-- with _E.Leclerc and all retailers_, also the ones sold "by all retailers",
-  "in supermarkets" (GMS)…: E.Leclerc sold them too, even unnamed.
+```
+Marie=2900123456785; Paul=2900987654327
+```
+
+Spaces and dashes in the number are ignored; the name is optional. Up to 10 cards.
+
+**About the balance.** E.Leclerc offers no public API for its cards: the balance of
+your "Ticket E.Leclerc" cannot be read automatically without your password, through
+an unofficial interface that can stop working at any time. The integration does not
+do that. You enter the balance yourself — from the widget, or from a scene — and
+Gladys keeps it, with its history.
 
 ## Devices
 
-| Device                    | Feature                          | Notes                            |
-| ------------------------- | -------------------------------- | -------------------------------- |
-| Store                     | Open (1 = open, 0 = closed)      | Usable in any scene condition    |
-| Store                     | Minutes until it opens or closes | Updated every minute             |
-| E.Leclerc product recalls | Recalls                          | Count over the configured window |
-| E.Leclerc product recalls | Latest recall                    | "Brand – product"                |
-
-The recalls device shows a **cloud** badge when RappelConso answered, and
-**unreachable** when it did not.
+| Device                  | Feature                          | Notes                                     |
+| ----------------------- | -------------------------------- | ----------------------------------------- |
+| Store                   | Open (1 = open, 0 = closed)      | Usable in any scene condition             |
+| Store                   | Minutes until it opens or closes | Updated every minute                      |
+| E.Leclerc card _<name>_ | Balance (€)                      | Set by you; usable in any scene condition |
 
 ## Scenes
 
 ### Triggers
 
-- **A product sold at E.Leclerc is recalled** (`product_recalled`): a new notice
-  concerns your store. Filters: category, and _sold at_ (E.Leclerc named / all
-  retailers). Variables: product, brand, reason, risks, notice link, notice
-  number. Example: send yourself a message "Recall: {{product}} — {{reason}}".
 - **The store opens soon** (`store_opening_soon`) and **The store closes soon**
   (`store_closing_soon`): fired once, the configured number of minutes before.
-  Variables: store name, time, minutes left.
+  Variables: store name, time, minutes left. Example: "The store closes at
+  {{time}}, {{minutes_left}} minutes left."
 
-A recall is announced once. Recalls already published when the integration is
-installed are not announced; the ones published while Gladys was off are, at the
-next start.
+"The store is open" and "the balance is above 10 €" are states: use the device
+conditions of Gladys.
 
 ### Actions
 
-- **Check a barcode** (`check_barcode`): looks a product up in the whole
-  RappelConso register. Outputs: _recalled_ (yes/no), product, reason, notice link.
-- **Is the store open?** (`is_store_open`): outputs _open_ (yes/no), the time of
-  the next change (HH:MM) and the minutes until then.
+- **Is the store open?** (`is_store_open`): outputs _open_ (yes/no), the time of the
+  next change (HH:MM) and the minutes until then.
+- **Update a loyalty card balance** (`set_loyalty_balance`): choose a card, then
+  _set the balance to_ an amount, or _add to the balance_ (a negative amount to
+  spend). Output: the new balance. The balance never goes below 0.
 
 ## Dashboard
 
 - **Store hours**: open or closed, until when, today's hours.
-- **Product recalls**: the counter, the latest recalls (tap one for the reason,
-  the risks, what to do and the notice), a **Check a barcode** button and a
-  **Refresh** button. The setting _Recalls shown_ sets the list length (0 to 8).
+- **Loyalty card**: the barcode of a card (setting _Card_; empty = the first one),
+  its balance and its number, and an **Update the balance** button. Show it at the
+  till: turn the brightness of your phone up for the scanner.
+
+The barcode is an EAN-13 when the card number is one (13 digits, valid check digit),
+a Code 128 otherwise. Both are read by till scanners.
 
 ## Troubleshooting
 
-- **"The opening hours are not understood"**: the message names the wrong part.
-  Use the English day names (`Mo`, not `Lu`) and `HH:MM` times (`08:30`, not `8h30`).
-- **RappelConso cannot be reached**: the integration needs internet access. It
-  tries again at the next interval; the last list stays shown.
-- **A barcode is not found**: only barcodes printed in the notice are found. Check
-  the notice on [rappel.conso.gouv.fr](https://rappel.conso.gouv.fr/) too.
+- **"The opening hours are not understood"**: the message names the wrong part. Use
+  the English day names (`Mo`, not `Lu`) and `HH:MM` times (`08:30`, not `8h30`).
+- **A card is "not understood"**: the number must be 6 to 20 digits. **Test the
+  configuration** lists what was not understood.
+- **The till does not read the barcode**: check the number, turn the brightness up,
+  and zoom on the widget. If your card has another kind of barcode, tell us in an
+  issue.
 
 ## Data
 
-- Recalls: [RappelConso](https://rappel.conso.gouv.fr/), open data of the French
-  Ministry of the Economy (data.economie.gouv.fr), Licence Ouverte.
-- Nothing about you is sent anywhere: the barcode you check is the only thing
-  searched online. The integration stores the list of recalls already seen in its
-  own `/data` volume.
+Nothing leaves your Gladys. The balances are kept in the integration's own `/data`
+volume (`cards.json`) and as Gladys states.

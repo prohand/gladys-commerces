@@ -1,39 +1,37 @@
 # E.Leclerc — Benutzerhandbuch
 
-Diese Integration bringt zwei Informationen über Ihren E.Leclerc-Markt in Gladys:
+Diese Integration bringt zwei Dinge zu E.Leclerc in Gladys:
 
-- **Produktrückrufe**: die Rückrufe von RappelConso, dem offiziellen französischen
-  Register, die ein bei E.Leclerc verkauftes Produkt betreffen;
-- **Öffnungszeiten**: ist Ihr Markt geöffnet, und wann öffnet oder schließt er.
+- die **Öffnungszeiten** Ihres Markts: ist er geöffnet, wann öffnet oder schließt er;
+- Ihre **Kundenkarten** (Carte E.Leclerc): ihr Barcode auf dem Dashboard, zum
+  Scannen an der Kasse mit dem Handy, und ihr Guthaben.
 
-Kein Konto, kein API-Schlüssel. Dies ist eine Community-Integration: Sie wird von
-E.Leclerc weder erstellt noch geprüft noch unterstützt.
+Alles wird in Gladys berechnet: kein Konto, kein Passwort, nichts wird ins Internet
+gesendet. Dies ist eine Community-Integration: Sie wird von E.Leclerc weder erstellt
+noch geprüft noch unterstützt.
 
 ## Einrichtung
 
 Öffnen Sie **Integrationen**, suchen Sie **E.Leclerc**, installieren Sie sie und
 füllen Sie dann den Bildschirm **Konfiguration** aus.
 
-| Feld                            | Was eintragen                                                                 |
-| ------------------------------- | ----------------------------------------------------------------------------- |
-| Name des Markts                 | Der Name des Markt-Geräts in Gladys, z. B. `E.Leclerc Carcassonne`.           |
-| Öffnungszeiten                  | Die Zeiten Ihres Markts (siehe unten). Standard: `Mo-Sa 08:30-20:00; PH off`. |
-| Vorlauf vor ... (Min.)          | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.          |
-| Zu verfolgende Rückrufe         | _E.Leclerc und alle Händler_ (Standard) oder _nur die, die E.Leclerc nennen_. |
-| Kategorien                      | Leer für alle, oder einige auswählen (Lebensmittel, Haustiere, Baby…).        |
-| Rückrufe der letzten (Tage)     | Wie viele Tage Zähler und Liste zurückblicken. Standard: 30.                  |
-| Aktualisierungsintervall (Min.) | Wie oft RappelConso gelesen wird. Standard: 60 Minuten.                       |
+| Feld                   | Was eintragen                                                                 |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| Name des Markts        | Der Name des Markt-Geräts in Gladys, z. B. `E.Leclerc Carcassonne`.           |
+| Öffnungszeiten         | Die Zeiten Ihres Markts (siehe unten). Standard: `Mo-Sa 08:30-20:00; PH off`. |
+| Vorlauf vor ... (Min.) | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.          |
+| Kartennummern          | Ihre Kundenkarten (siehe unten). Leer lassen, wenn Sie keine haben.           |
 
 Klicken Sie dann auf **Konfiguration testen**: Die Antwort sagt, ob der Markt
-geöffnet ist und wie viele Rückrufe ihn betreffen.
+geöffnet ist und welche Karten verstanden wurden.
 
-Öffnen Sie zuletzt den Reiter **Erkennung** der Integration und legen Sie die beiden
-Geräte an.
+Öffnen Sie zuletzt den Reiter **Erkennung** der Integration und legen Sie die Geräte an.
 
 ### Öffnungszeiten
 
 E.Leclerc veröffentlicht keine API für die Öffnungszeiten seiner Märkte: Sie geben
-sie ein, in der OpenStreetMap-Syntax — oft schon auf der Kartenseite des Markts zu sehen:
+sie ein, in der OpenStreetMap-Syntax — oft schon auf der Kartenseite des Markts zu
+sehen:
 
 | Sie schreiben                       | Bedeutung                                            |
 | ----------------------------------- | ---------------------------------------------------- |
@@ -48,71 +46,74 @@ sie ein, in der OpenStreetMap-Syntax — oft schon auf der Kartenseite des Markt
 Tage: `Mo Tu We Th Fr Sa Su`. `PH` = französische Feiertage (Ostermontag, Christi
 Himmelfahrt und Pfingstmontag inbegriffen). Die Zeiten gelten nach Pariser Uhrzeit.
 
-### Welche Rückrufe
+### Kundenkarten
 
-Jede Rückrufmeldung nennt, wer das Produkt verkauft hat. Die Integration behält:
+Eine Karte pro Person: ein Name, `=`, dann die unter dem Barcode der Karte gedruckte
+Nummer. Trennen Sie die Karten mit `;`:
 
-- die Meldungen, die **E.Leclerc nennen**;
-- mit _E.Leclerc und alle Händler_ auch die „bei allen Händlern“, „in
-  Supermärkten“ (GMS)… verkauften: E.Leclerc hat sie auch verkauft, ohne genannt zu sein.
+```
+Marie=2900123456785; Paul=2900987654327
+```
+
+Leerzeichen und Bindestriche in der Nummer werden ignoriert; der Name ist optional.
+Höchstens 10 Karten.
+
+**Zum Guthaben.** E.Leclerc bietet keine öffentliche API für seine Karten: Das
+Guthaben „Ticket E.Leclerc“ kann nicht automatisch gelesen werden, ohne Ihr Passwort
+über eine inoffizielle Schnittstelle, die jederzeit ausfallen kann. Die Integration
+tut das nicht. Sie geben das Guthaben selbst ein — im Widget oder in einer Szene —
+und Gladys speichert es mit seinem Verlauf.
 
 ## Geräte
 
-| Gerät                     | Funktion                                 | Hinweise                         |
-| ------------------------- | ---------------------------------------- | -------------------------------- |
-| Markt                     | Geöffnet (1 = geöffnet, 0 = geschlossen) | In jeder Szenenbedingung nutzbar |
-| Markt                     | Minuten bis zur Öffnung oder Schließung  | Jede Minute aktualisiert         |
-| E.Leclerc product recalls | Rückrufe                                 | Anzahl im eingestellten Zeitraum |
-| E.Leclerc product recalls | Neuester Rückruf                         | „Marke – Produkt“                |
-
-Das Rückruf-Gerät zeigt ein **Cloud**-Abzeichen, wenn RappelConso geantwortet hat,
-sonst **nicht erreichbar**.
+| Gerät                   | Funktion                                 | Hinweise                                     |
+| ----------------------- | ---------------------------------------- | -------------------------------------------- |
+| Markt                   | Geöffnet (1 = geöffnet, 0 = geschlossen) | In jeder Szenenbedingung nutzbar             |
+| Markt                   | Minuten bis zur Öffnung oder Schließung  | Jede Minute aktualisiert                     |
+| E.Leclerc card _<Name>_ | Guthaben (€)                             | Von Ihnen eingegeben; in Bedingungen nutzbar |
 
 ## Szenen
 
 ### Auslöser
 
-- **Ein bei E.Leclerc verkauftes Produkt wird zurückgerufen** (`product_recalled`):
-  eine neue Meldung betrifft Ihren Markt. Filter: Kategorie und _verkauft bei_
-  (E.Leclerc genannt / alle Händler). Variablen: Produkt, Marke, Grund, Risiken,
-  Link zur Meldung, Meldungsnummer. Beispiel: Senden Sie sich die Nachricht
-  „Rückruf: {{product}} — {{reason}}“.
 - **Der Markt öffnet bald** (`store_opening_soon`) und **Der Markt schließt bald**
-  (`store_closing_soon`): einmal, die eingestellte Anzahl Minuten vorher.
-  Variablen: Name des Markts, Uhrzeit, verbleibende Minuten.
+  (`store_closing_soon`): einmal, die eingestellte Anzahl Minuten vorher. Variablen:
+  Name des Markts, Uhrzeit, verbleibende Minuten. Beispiel: „Der Markt schließt um
+  {{time}}, noch {{minutes_left}} Minuten.“
 
-Ein Rückruf wird einmal gemeldet. Bei der Installation bereits veröffentlichte
-Rückrufe werden nicht gemeldet; die während Gladys aus war veröffentlichten schon,
-beim nächsten Start.
+„Der Markt ist geöffnet“ und „das Guthaben liegt über 10 €“ sind Zustände: Nutzen
+Sie die Gerätebedingungen von Gladys.
 
 ### Aktionen
 
-- **Barcode prüfen** (`check_barcode`): sucht ein Produkt im gesamten
-  RappelConso-Register. Ausgaben: _zurückgerufen_ (ja/nein), Produkt, Grund, Link.
 - **Ist der Markt geöffnet?** (`is_store_open`): Ausgaben _geöffnet_ (ja/nein), die
   Uhrzeit der nächsten Änderung (HH:MM) und die Minuten bis dahin.
+- **Guthaben einer Kundenkarte ändern** (`set_loyalty_balance`): Wählen Sie eine
+  Karte, dann _Guthaben setzen auf_ einen Betrag oder _zum Guthaben addieren_ (ein
+  negativer Betrag zum Ausgeben). Ausgabe: das neue Guthaben. Es fällt nie unter 0.
 
 ## Dashboard
 
 - **Öffnungszeiten**: geöffnet oder geschlossen, bis wann, heutige Zeiten.
-- **Produktrückrufe**: der Zähler, die neuesten Rückrufe (antippen für Grund,
-  Risiken, Verhalten und Meldung), eine Schaltfläche **Barcode prüfen** und eine
-  Schaltfläche **Aktualisieren**. Die Einstellung _Angezeigte Rückrufe_ legt die
-  Länge der Liste fest (0 bis 8).
+- **Kundenkarte**: der Barcode einer Karte (Einstellung _Karte_; leer = die erste),
+  ihr Guthaben und ihre Nummer, und eine Schaltfläche **Guthaben aktualisieren**.
+  An der Kasse vorzeigen: Erhöhen Sie die Helligkeit des Handys für den Scanner.
+
+Der Barcode ist ein EAN-13, wenn die Kartennummer einer ist (13 Ziffern, gültige
+Prüfziffer), sonst ein Code 128. Kassenscanner lesen beide.
 
 ## Fehlerbehebung
 
 - **„Die Öffnungszeiten werden nicht verstanden“**: Die Meldung nennt den falschen
   Teil. Verwenden Sie die englischen Tagesnamen (`Mo`, `Tu`…) und `HH:MM`-Zeiten
   (`08:30`, nicht `8.30`).
-- **RappelConso ist nicht erreichbar**: Die Integration braucht Internet. Sie
-  versucht es beim nächsten Intervall erneut; die letzte Liste bleibt sichtbar.
-- **Ein Barcode wird nicht gefunden**: Nur in der Meldung aufgeführte Barcodes
-  werden gefunden. Prüfen Sie auch [rappel.conso.gouv.fr](https://rappel.conso.gouv.fr/).
+- **Eine Karte wird „nicht verstanden“**: Die Nummer muss 6 bis 20 Ziffern haben.
+  **Konfiguration testen** listet, was nicht verstanden wurde.
+- **Die Kasse liest den Barcode nicht**: Prüfen Sie die Nummer, erhöhen Sie die
+  Helligkeit und zoomen Sie auf das Widget. Trägt Ihre Karte eine andere Barcode-Art,
+  melden Sie es in einem Issue.
 
 ## Daten
 
-- Rückrufe: [RappelConso](https://rappel.conso.gouv.fr/), offene Daten des
-  französischen Wirtschaftsministeriums (data.economie.gouv.fr), Licence Ouverte.
-- Nichts über Sie wird gesendet: Nur der geprüfte Barcode wird online gesucht. Die
-  Integration speichert die Liste der bereits gesehenen Rückrufe in ihrem Volume `/data`.
+Nichts verlässt Ihr Gladys. Die Guthaben werden im Volume `/data` der Integration
+(`cards.json`) und als Gladys-Zustände gespeichert.
