@@ -36,4 +36,4 @@ the version's GitHub Release.
   multi-arch image build, Release and GitHub releases workflows, Dependabot.
 - `SECURITY.md` and `CLAUDE.md`.
 
-[Unreleased]: https://github.com/prohand/gladys-commerces/commits/main
+[Unreleased]: https://github.com/prohand/gladys-horaires-commerces/commits/main

@@ -1,5 +1,5 @@
 {
-  "name": "gladys-commerces",
+  "name": "gladys-horaires-commerces",
   "version": "1.0.0",
   "private": true,
   "description": "Gladys Assistant external integration for the fuel prices of E.Leclerc stations (French open data).",

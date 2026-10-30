@@ -25,7 +25,8 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 const logger = createLogger({ name: 'finder' });
 
 export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
-const USER_AGENT = 'gladys-commerces (+https://github.com/prohand/gladys-commerces)';
+const USER_AGENT =
+  'gladys-horaires-commerces (+https://github.com/prohand/gladys-horaires-commerces)';
 
 /** Results older than this are looked up again. */
 export const REFRESH_MS = 24 * 3600_000;
