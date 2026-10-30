@@ -1,51 +1,17 @@
 // -----------------------------------------------------------------------------
 // Manifest actions: the buttons of the Configuration screen.
 //
-//   - `test_configuration`: reads the stores and the loyalty cards, and says
-//     what came out of both.
+//   - `test_configuration`: reads the stores and the shops around the houses,
+//     and says what came out.
 //
 // The resolved multi-language object is shown under the button; a thrown
 // error is shown too. Keys are stored: never renamed.
 // -----------------------------------------------------------------------------
 
 import { localize, pick } from '../i18n.js';
-import { cardModules } from '../shops/barcode.js';
 import { describeHoursError, describePlace, describeStatus } from '../shops/stores.js';
 
 export const ACTIONS = { TEST_CONFIGURATION: 'test_configuration' };
-
-/** "2 card(s): Marie (EAN-13), Paul (Code 128). Not understood: abc." */
-export function describeCards(wallet) {
-  const list = wallet.cards
-    .map((card) => `${card.name} (${cardModules(card.number).symbology})`)
-    .join(', ');
-  return localize((language) => {
-    const cards =
-      wallet.cards.length === 0
-        ? pick(language, {
-            en: 'No loyalty card.',
-            fr: 'Aucune carte de fidélité.',
-            de: 'Keine Kundenkarte.',
-            es: 'Ninguna tarjeta de fidelidad.',
-          })
-        : pick(language, {
-            en: `${wallet.cards.length} loyalty card(s): ${list}.`,
-            fr: `${wallet.cards.length} carte(s) de fidélité : ${list}.`,
-            de: `${wallet.cards.length} Kundenkarte(n): ${list}.`,
-            es: `${wallet.cards.length} tarjeta(s) de fidelidad: ${list}.`,
-          });
-    if (wallet.errors.length === 0) {
-      return cards;
-    }
-    const wrong = wallet.errors.join(' / ');
-    return `${cards} ${pick(language, {
-      en: `Not understood: ${wrong}.`,
-      fr: `Non compris : ${wrong}.`,
-      de: `Nicht verstanden: ${wrong}.`,
-      es: `No entendido: ${wrong}.`,
-    })}`;
-  });
-}
 
 /**
  * One line per store: "Bakery: Open, closes at 20:00.", and for a store
@@ -111,6 +77,13 @@ export function describeDiscovery(finder, config) {
         });
       }
       switch (state) {
+        case 'no_key':
+          return pick(language, {
+            en: 'no overpass.ch key: paste your free key in the configuration (steps in the documentation).',
+            fr: 'pas de clé overpass.ch : collez votre clé gratuite dans la configuration (étapes dans la documentation).',
+            de: 'kein overpass.ch-Schlüssel: Fügen Sie Ihren kostenlosen Schlüssel in die Konfiguration ein (Schritte in der Dokumentation).',
+            es: 'sin clave de overpass.ch: pegue su clave gratuita en la configuración (pasos en la documentación).',
+          });
         case 'no_house':
           return pick(language, {
             en: 'no house searched has a location: set it in Settings → Houses.',
@@ -162,21 +135,19 @@ export function describeDiscovery(finder, config) {
 /**
  * @param {object} context
  * @param {object} context.watcher
- * @param {object} context.wallet
  * @param {object} [context.finder] the OpenStreetMap lookups (HoursFinder)
  * @param {() => object} [context.config] the configuration now
  * @param {() => Promise<void>} [context.findHours] a lookup asked by the user
  */
-export function actionHandlers({ watcher, wallet, finder, config, findHours }) {
+export function actionHandlers({ watcher, finder, config, findHours }) {
   return {
     async [ACTIONS.TEST_CONFIGURATION]() {
       // The user just saved or is checking: look up now, even after a failure.
       await findHours?.();
       const stores = describeStores(watcher);
       const discovery = finder ? describeDiscovery(finder, config()) : null;
-      const cards = describeCards(wallet);
       return localize((language) =>
-        [stores[language], discovery?.[language], cards[language]].filter(Boolean).join('\n'),
+        [stores[language], discovery?.[language]].filter(Boolean).join('\n'),
       );
     },
   };

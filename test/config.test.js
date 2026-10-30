@@ -4,7 +4,7 @@ import { DEFAULT_CONFIG, normalizeConfig } from '../src/config.js';
 
 test('an empty configuration is the defaults', () => {
   assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
-  assert.deepEqual(normalizeConfig({ stores: '  ', loyalty_cards: '' }), DEFAULT_CONFIG);
+  assert.deepEqual(normalizeConfig({ stores: '  ', overpass_ch_key: '' }), DEFAULT_CONFIG);
 });
 
 test('the notice typed as text is read, clamped to the manifest bounds', () => {
@@ -26,9 +26,7 @@ test('the overpass.ch key: the key alone, from the URL pasted, empty when not on
 });
 
 test('texts are trimmed', () => {
-  const config = normalizeConfig({ stores: ' A = 24/7 ', loyalty_cards: ' A=12345678 ' });
-  assert.equal(config.stores, 'A = 24/7');
-  assert.equal(config.loyalty_cards, 'A=12345678');
+  assert.equal(normalizeConfig({ stores: ' A = 24/7 ' }).stores, 'A = 24/7');
 });
 
 test('the lists of the houses and of the kinds: default when never saved, else as saved', () => {

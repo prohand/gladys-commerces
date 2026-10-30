@@ -3,10 +3,10 @@
   "type": "device",
   "name": "Horaires Commerces",
   "description": {
-    "en": "Opening hours of your shops and your loyalty cards on the Gladys dashboard.",
-    "fr": "Horaires de vos commerces et vos cartes de fidélité sur le tableau de bord Gladys.",
-    "de": "Öffnungszeiten Ihrer Geschäfte und Ihre Kundenkarten auf dem Gladys-Dashboard.",
-    "es": "Horario de sus comercios y sus tarjetas de fidelidad en el panel de Gladys."
+    "en": "Opening hours of your shops, found on OpenStreetMap, on the Gladys dashboard.",
+    "fr": "Horaires de vos commerces, trouvés sur OpenStreetMap, sur le tableau de bord Gladys.",
+    "de": "Öffnungszeiten Ihrer Geschäfte, auf OpenStreetMap gefunden, auf dem Gladys-Dashboard.",
+    "es": "Horario de sus comercios, encontrado en OpenStreetMap, en el panel de Gladys."
   },
   "version": "1.0.0",
   "docker_image": "ghcr.io/prohand/gladys-horaires-commerces:1.0.0",
@@ -18,9 +18,8 @@
     "magasin",
     "horaires",
     "opening hours",
-    "carte de fidélité",
-    "loyalty card",
-    "code-barres",
+    "heures d'ouverture",
+    "openstreetmap",
     "supermarché",
     "pharmacie",
     "boulangerie"
@@ -39,10 +38,10 @@
         "es": "Primeros pasos"
       },
       "description": {
-        "en": "Everything is computed in Gladys, with no account: the opening hours of the shops you go to, typed by you or found on OpenStreetMap around your houses, and your loyalty cards of any brand, whose barcode the dashboard shows at the till. Shops have no public API for their cards: the balance is the one you enter.",
-        "fr": "Tout est calculé dans Gladys, sans compte : les horaires des commerces où vous allez, saisis par vous ou trouvés sur OpenStreetMap autour de vos maisons, et vos cartes de fidélité de toutes enseignes, dont le tableau de bord affiche le code-barres en caisse. Les enseignes n'ont pas d'API publique pour leurs cartes : la cagnotte est celle que vous saisissez.",
-        "de": "Alles wird in Gladys berechnet, ohne Konto: die Öffnungszeiten Ihrer Geschäfte, von Ihnen eingegeben oder auf OpenStreetMap rund um Ihre Häuser gefunden, und Ihre Kundenkarten aller Marken, deren Barcode das Dashboard an der Kasse zeigt. Die Händler haben keine öffentliche API für ihre Karten: Das Guthaben ist das, das Sie eingeben.",
-        "es": "Todo se calcula en Gladys, sin cuenta: el horario de los comercios a los que va, escrito por usted o encontrado en OpenStreetMap alrededor de sus casas, y sus tarjetas de fidelidad de cualquier marca, cuyo código de barras muestra el panel en caja. Los comercios no tienen API pública para sus tarjetas: el saldo es el que usted introduce."
+        "en": "Everything is computed in Gladys: the opening hours of the shops you go to, typed by you or found on OpenStreetMap around your houses, open or closed at a glance, with scenes when a shop opens or closes soon. To find the hours on OpenStreetMap, paste your free overpass.ch key below.",
+        "fr": "Tout est calculé dans Gladys : les horaires des commerces où vous allez, saisis par vous ou trouvés sur OpenStreetMap autour de vos maisons, ouverts ou fermés d'un coup d'œil, avec des scènes quand un commerce ouvre ou ferme bientôt. Pour trouver les horaires sur OpenStreetMap, collez votre clé gratuite overpass.ch ci-dessous.",
+        "de": "Alles wird in Gladys berechnet: die Öffnungszeiten Ihrer Geschäfte, von Ihnen eingegeben oder auf OpenStreetMap rund um Ihre Häuser gefunden, geöffnet oder geschlossen auf einen Blick, mit Szenen, wenn ein Geschäft bald öffnet oder schließt. Um die Zeiten auf OpenStreetMap zu finden, fügen Sie unten Ihren kostenlosen overpass.ch-Schlüssel ein.",
+        "es": "Todo se calcula en Gladys: el horario de los comercios a los que va, escrito por usted o encontrado en OpenStreetMap alrededor de sus casas, abierto o cerrado de un vistazo, con escenas cuando un comercio abre o cierra pronto. Para encontrar el horario en OpenStreetMap, pegue abajo su clave gratuita de overpass.ch."
       },
       "links": [
         {
@@ -64,6 +63,53 @@
           }
         }
       ]
+    },
+    {
+      "key": "overpass_section",
+      "type": "section",
+      "label": {
+        "en": "OpenStreetMap server",
+        "fr": "Serveur OpenStreetMap",
+        "de": "OpenStreetMap-Server",
+        "es": "Servidor de OpenStreetMap"
+      },
+      "description": {
+        "en": "The hours are looked up on OpenStreetMap through overpass.ch, with your own free key: create a free account on overpass.ch (no credit card) and paste its key below (steps in the Documentation). Without a key, nothing is looked up: type the hours of your shops. overpass.ch receives the words looked for, the kinds of shops and an area around each house.",
+        "fr": "Les horaires sont cherchés sur OpenStreetMap par overpass.ch, avec votre propre clé gratuite : créez un compte gratuit sur overpass.ch (sans carte bancaire) et collez sa clé ci-dessous (étapes dans la Documentation). Sans clé, rien n'est cherché : écrivez les horaires de vos commerces. overpass.ch reçoit les mots cherchés, les types de commerces et une zone autour de chaque maison.",
+        "de": "Die Zeiten werden auf OpenStreetMap über overpass.ch gesucht, mit Ihrem eigenen kostenlosen Schlüssel: Legen Sie ein kostenloses Konto auf overpass.ch an (ohne Kreditkarte) und fügen Sie den Schlüssel unten ein (Schritte in der Dokumentation). Ohne Schlüssel wird nichts gesucht: Geben Sie die Zeiten Ihrer Geschäfte ein. overpass.ch erhält die gesuchten Wörter, die Arten von Geschäften und einen Bereich um jedes Haus.",
+        "es": "El horario se busca en OpenStreetMap a través de overpass.ch, con su propia clave gratuita: cree una cuenta gratuita en overpass.ch (sin tarjeta) y pegue su clave abajo (pasos en la Documentación). Sin clave, no se busca nada: escriba el horario de sus comercios. overpass.ch recibe las palabras buscadas, los tipos de comercios y una zona alrededor de cada casa."
+      },
+      "links": [
+        {
+          "url": "https://overpass.ch/signup",
+          "label": {
+            "en": "overpass.ch account",
+            "fr": "Compte overpass.ch",
+            "de": "overpass.ch-Konto",
+            "es": "Cuenta overpass.ch"
+          }
+        },
+        {
+          "url": "https://github.com/prohand/gladys-horaires-commerces/blob/main/docs/en.md",
+          "label": {
+            "en": "Documentation",
+            "fr": "Documentation",
+            "de": "Dokumentation",
+            "es": "Documentación"
+          }
+        }
+      ]
+    },
+    {
+      "key": "overpass_ch_key",
+      "type": "secret",
+      "label": {
+        "en": "overpass.ch key",
+        "fr": "Clé overpass.ch",
+        "de": "overpass.ch-Schlüssel",
+        "es": "Clave de overpass.ch"
+      },
+      "required": false
     },
     {
       "key": "stores_section",
@@ -294,87 +340,6 @@
       "default": 30,
       "min": 5,
       "max": 180
-    },
-    {
-      "key": "overpass_section",
-      "type": "section",
-      "label": {
-        "en": "OpenStreetMap server",
-        "fr": "Serveur OpenStreetMap",
-        "de": "OpenStreetMap-Server",
-        "es": "Servidor de OpenStreetMap"
-      },
-      "description": {
-        "en": "The hours are looked up on free public OpenStreetMap servers, often busy. For a steadier lookup, create a free account on overpass.ch (no credit card) and paste its key below (steps in the Documentation): that server is asked first, the public ones if it fails. It receives the same data: the words looked for, the kinds of shops and an area around each house.",
-        "fr": "Les horaires sont cherchés sur des serveurs OpenStreetMap publics et gratuits, souvent chargés. Pour une recherche plus sûre, créez un compte gratuit sur overpass.ch (sans carte bancaire) et collez sa clé ci-dessous (étapes dans la Documentation) : ce serveur est interrogé en premier, les publics s'il échoue. Il reçoit les mêmes données : les mots cherchés, les types de commerces et une zone autour de chaque maison.",
-        "de": "Die Zeiten werden auf kostenlosen öffentlichen OpenStreetMap-Servern gesucht, die oft ausgelastet sind. Für eine zuverlässigere Suche legen Sie ein kostenloses Konto auf overpass.ch an (ohne Kreditkarte) und fügen Sie den Schlüssel unten ein (Schritte in der Dokumentation): Dieser Server wird zuerst gefragt, die öffentlichen, wenn er scheitert. Er erhält dieselben Daten: die gesuchten Wörter, die Arten von Geschäften und einen Bereich um jedes Haus.",
-        "es": "El horario se busca en servidores públicos y gratuitos de OpenStreetMap, a menudo saturados. Para una búsqueda más fiable, cree una cuenta gratuita en overpass.ch (sin tarjeta) y pegue su clave abajo (pasos en la Documentación): ese servidor se consulta primero, los públicos si falla. Recibe los mismos datos: las palabras buscadas, los tipos de comercios y una zona alrededor de cada casa."
-      },
-      "links": [
-        {
-          "url": "https://overpass.ch/signup",
-          "label": {
-            "en": "overpass.ch account",
-            "fr": "Compte overpass.ch",
-            "de": "overpass.ch-Konto",
-            "es": "Cuenta overpass.ch"
-          }
-        },
-        {
-          "url": "https://github.com/prohand/gladys-horaires-commerces/blob/main/docs/en.md",
-          "label": {
-            "en": "Documentation",
-            "fr": "Documentation",
-            "de": "Dokumentation",
-            "es": "Documentación"
-          }
-        }
-      ]
-    },
-    {
-      "key": "overpass_ch_key",
-      "type": "secret",
-      "label": {
-        "en": "overpass.ch key (optional)",
-        "fr": "Clé overpass.ch (facultatif)",
-        "de": "overpass.ch-Schlüssel (optional)",
-        "es": "Clave de overpass.ch (opcional)"
-      },
-      "required": false
-    },
-    {
-      "key": "cards_section",
-      "type": "section",
-      "label": {
-        "en": "Loyalty cards",
-        "fr": "Cartes de fidélité",
-        "de": "Kundenkarten",
-        "es": "Tarjetas de fidelidad"
-      },
-      "description": {
-        "en": "One card per entry: a name (brand, holder), an equals sign, the number printed under the barcode. Cards separated by a semicolon.",
-        "fr": "Une carte par entrée : un nom (enseigne, titulaire), un signe égal, le numéro imprimé sous le code-barres. Cartes séparées par un point-virgule.",
-        "de": "Eine Karte pro Eintrag: ein Name (Marke, Inhaber), ein Gleichheitszeichen, die unter dem Barcode gedruckte Nummer. Karten durch Semikolon getrennt.",
-        "es": "Una tarjeta por entrada: un nombre (marca, titular), un signo igual, el número impreso bajo el código de barras. Tarjetas separadas por punto y coma."
-      }
-    },
-    {
-      "key": "loyalty_cards",
-      "type": "string",
-      "label": {
-        "en": "Card numbers",
-        "fr": "Numéros de carte",
-        "de": "Kartennummern",
-        "es": "Números de tarjeta"
-      },
-      "placeholder": {
-        "en": "e.g. Leclerc Marie=2900123456785; Carrefour=2900987654327",
-        "fr": "ex. Leclerc Marie=2900123456785; Carrefour=2900987654327",
-        "de": "z. B. Leclerc Marie=2900123456785; Carrefour=2900987654327",
-        "es": "p. ej. Leclerc Marie=2900123456785; Carrefour=2900987654327"
-      },
-      "required": false,
-      "default": ""
     }
   ],
   "actions": [
@@ -573,93 +538,6 @@
           }
         }
       ]
-    },
-    {
-      "key": "set_loyalty_balance",
-      "label": {
-        "en": "Update a loyalty card balance",
-        "fr": "Mettre à jour une cagnotte",
-        "de": "Guthaben einer Kundenkarte ändern",
-        "es": "Actualizar el saldo de una tarjeta"
-      },
-      "description": {
-        "en": "Set the balance of a card, or add an amount to it (negative to spend).",
-        "fr": "Fixe la cagnotte d'une carte, ou y ajoute un montant (négatif pour dépenser).",
-        "de": "Setzt das Guthaben einer Karte oder addiert einen Betrag (negativ zum Ausgeben).",
-        "es": "Fija el saldo de una tarjeta, o le suma un importe (negativo para gastar)."
-      },
-      "timeout_seconds": 10,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": {
-            "en": "Loyalty card",
-            "fr": "Carte de fidélité",
-            "de": "Kundenkarte",
-            "es": "Tarjeta de fidelidad"
-          },
-          "required": true
-        },
-        {
-          "key": "mode",
-          "type": "select",
-          "label": {
-            "en": "Operation",
-            "fr": "Opération",
-            "de": "Vorgang",
-            "es": "Operación"
-          },
-          "required": false,
-          "default": "set",
-          "options": [
-            {
-              "value": "set",
-              "label": {
-                "en": "Set the balance to",
-                "fr": "Fixer la cagnotte à",
-                "de": "Guthaben setzen auf",
-                "es": "Fijar el saldo en"
-              }
-            },
-            {
-              "value": "add",
-              "label": {
-                "en": "Add to the balance",
-                "fr": "Ajouter à la cagnotte",
-                "de": "Zum Guthaben addieren",
-                "es": "Sumar al saldo"
-              }
-            }
-          ]
-        },
-        {
-          "key": "amount",
-          "type": "number",
-          "label": {
-            "en": "Amount (€)",
-            "fr": "Montant (€)",
-            "de": "Betrag (€)",
-            "es": "Importe (€)"
-          },
-          "required": true,
-          "min": -100000,
-          "max": 100000
-        }
-      ],
-      "outputs": [
-        {
-          "key": "balance",
-          "type": "number",
-          "label": {
-            "en": "New balance (€)",
-            "fr": "Nouvelle cagnotte (€)",
-            "de": "Neues Guthaben (€)",
-            "es": "Nuevo saldo (€)"
-          }
-        }
-      ]
     }
   ],
   "widgets": [
@@ -692,37 +570,6 @@
           "required": false
         }
       ]
-    },
-    {
-      "key": "loyalty_card",
-      "label": {
-        "en": "Loyalty card",
-        "fr": "Carte de fidélité",
-        "de": "Kundenkarte",
-        "es": "Tarjeta de fidelidad"
-      },
-      "description": {
-        "en": "The card's barcode to scan at the till, and its balance.",
-        "fr": "Le code-barres de la carte à scanner en caisse, et sa cagnotte.",
-        "de": "Der Barcode der Karte zum Scannen an der Kasse, und ihr Guthaben.",
-        "es": "El código de barras de la tarjeta para la caja, y su saldo."
-      },
-      "icon": "credit-card",
-      "settings": [
-        {
-          "key": "card",
-          "type": "select",
-          "source": "devices",
-          "label": {
-            "en": "Card (empty: the first one)",
-            "fr": "Carte (vide : la première)",
-            "de": "Karte (leer: die erste)",
-            "es": "Tarjeta (vacío: la primera)"
-          },
-          "required": false
-        }
-      ],
-      "action_timeout_seconds": 15
     }
   ]
 }

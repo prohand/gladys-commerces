@@ -1,19 +1,5 @@
-// Test helpers: a fake clock and an in-memory storage of the card balances.
+// Test helpers: a fake clock, a fake Overpass, an in-memory cache of the hours.
 // Nothing here touches the disk or the network.
-
-/** A storage of the balances, kept in the test. */
-export function memoryStorage(balances = {}) {
-  const storage = {
-    balances: structuredClone(balances),
-    async load() {
-      return structuredClone(storage.balances);
-    },
-    async save(next) {
-      storage.balances = structuredClone(next);
-    },
-  };
-  return storage;
-}
 
 /** A clock the test moves. */
 export function fakeClock(iso) {
@@ -28,23 +14,18 @@ export function fakeClock(iso) {
   return clock;
 }
 
-/** Two valid card numbers: an EAN-13 and a number Code 128 carries. */
-export const MARIE = '2900123456785';
-export const PAUL = '123456789012345';
-
 /** A fetch answering like Overpass, with the queries it received. */
 export function fakeOverpass(elements = []) {
   const fetch = async (url, options) => {
     fetch.urls.push(url);
     fetch.queries.push(new URLSearchParams(options.body).get('data'));
-    if (fetch.down || fetch.downUrls.includes(url)) {
+    if (fetch.down) {
       throw new Error('network down');
     }
     return { ok: true, status: 200, json: async () => ({ elements: fetch.elements }) };
   };
   fetch.queries = [];
   fetch.urls = [];
-  fetch.downUrls = [];
   fetch.elements = elements;
   fetch.down = false;
   return fetch;

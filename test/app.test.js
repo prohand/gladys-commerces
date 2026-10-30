@@ -1,57 +1,53 @@
 // End to end: the handlers of src/app.js, driven by the SDK's fake Gladys,
-// with a fake clock and an in-memory storage of the balances.
+// with a fake clock, a fake Overpass and an in-memory cache of the hours.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import { validateWidgetContent, validateWidgetImage } from '@gladysassistant/integration-sdk';
+import { validateWidgetContent } from '@gladysassistant/integration-sdk';
 import { createApp } from '../src/app.js';
-import { OVERPASS_URLS, overpassChUrl } from '../src/shops/finder.js';
-import { cardIds, storeIds } from '../src/devices/index.js';
-import {
-  fakeClock,
-  fakeOverpass,
-  HOUSES,
-  MARIE,
-  memoryCache,
-  memoryStorage,
-  OSM_SHOPS,
-  PAUL,
-} from './helpers/fixtures.js';
+import { overpassChUrl } from '../src/shops/finder.js';
+import { storeIds } from '../src/devices/index.js';
+import { fakeClock, fakeOverpass, HOUSES, memoryCache, OSM_SHOPS } from './helpers/fixtures.js';
 
-const CARDS = `Marie=${MARIE}; Paul=${PAUL}`;
+const KEY = 'Ab12cd34';
 const STORES = 'Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00';
 
 // No discovery unless a test asks for it: the lists stay the typed ones.
-async function setup({ config = { stores: STORES, loyalty_cards: CARDS }, balances = {} } = {}) {
-  const gladys = createFakeGladys({ config: { discover_kinds: [], ...config }, houses: HOUSES });
+async function setup({ config = { stores: STORES } } = {}) {
+  const gladys = createFakeGladys({
+    config: { discover_kinds: [], overpass_ch_key: KEY, ...config },
+    houses: HOUSES,
+  });
   const clock = fakeClock('2026-10-30T18:00:00Z'); // Friday 19:00 in Paris
-  const storage = memoryStorage(balances);
   const fetch = fakeOverpass(OSM_SHOPS);
   const hoursCache = memoryCache();
-  const app = createApp(gladys, { timers: false, now: clock, storage, fetch, hoursCache });
+  const app = createApp(gladys, { timers: false, now: clock, fetch, hoursCache });
   await gladys.connect();
-  return { gladys, app, clock, storage, fetch, hoursCache };
+  return { gladys, app, clock, fetch, hoursCache };
 }
 
-test('on connection: one device per store and per card, with their states', async () => {
-  const { gladys } = await setup({
-    config: { stores: STORES, loyalty_cards: CARDS },
-    balances: { [MARIE]: { balance: 7.5, updated_at: 'x' } },
-  });
+test('on connection: one device per store, with its states', async () => {
+  const { gladys } = await setup();
   assert.deepEqual(
     gladys.fake.discoveredDevices.map((device) => device.name),
-    ['Leclerc', 'Pharmacie', 'Marie', 'Paul'],
+    ['Leclerc', 'Pharmacie'],
   );
   assert.equal(gladys.fake.lastState(storeIds(gladys, 'leclerc').feature('open')), 1);
   assert.equal(gladys.fake.lastState(storeIds(gladys, 'pharmacie').feature('open')), 0);
-  assert.equal(gladys.fake.lastState(cardIds(gladys, MARIE).feature('balance')), 7.5);
   assert.equal(gladys.fake.connectionStatus.connected, true);
 });
 
-test('the overpass.ch key of the configuration is the first server asked', async () => {
-  const { fetch } = await setup({ config: { stores: 'Leclerc', overpass_ch_key: 'Ab12cd34' } });
-  assert.deepEqual(fetch.urls, [overpassChUrl('Ab12cd34')]);
+test('the overpass.ch key of the configuration is the server asked', async () => {
+  const { fetch } = await setup({ config: { stores: 'Leclerc' } });
+  assert.deepEqual(fetch.urls, [overpassChUrl(KEY)]);
+});
+
+test('no overpass.ch key: no call, the store and the test say why', async () => {
+  const { gladys, fetch } = await setup({ config: { stores: 'Leclerc', overpass_ch_key: '' } });
+  assert.equal(fetch.queries.length, 0);
+  const message = (await gladys.fake.action('test_configuration', {})).data.message.fr;
+  assert.match(message, /clé gratuite overpass\.ch/);
 });
 
 test('scan request publishes the devices again', async () => {
@@ -59,10 +55,10 @@ test('scan request publishes the devices again', async () => {
   const before = gladys.fake.requests.length;
   await gladys.fake.scanRequest();
   assert.ok(gladys.fake.requests.length > before);
-  assert.equal(gladys.fake.discoveredDevices.length, 4);
+  assert.equal(gladys.fake.discoveredDevices.length, 2);
 });
 
-test('a new configuration re-reads the stores and the cards', async () => {
+test('a new configuration re-reads the stores', async () => {
   const { gladys, app } = await setup();
   await gladys.fake.configUpdated({ stores: 'Marché = Mo-Su off', discover_kinds: [] });
   assert.deepEqual(
@@ -73,10 +69,8 @@ test('a new configuration re-reads the stores and the cards', async () => {
   assert.ok(gladys.fake.widgetRefreshes.length > 0);
 });
 
-test('action test_configuration reports every store and the cards', async () => {
-  const { gladys } = await setup({
-    config: { stores: `${STORES} | Bio = Lu 9h | auto`, loyalty_cards: `${CARDS}; Zoé=abc` },
-  });
+test('action test_configuration reports every store', async () => {
+  const { gladys } = await setup({ config: { stores: `${STORES} | Bio = Lu 9h | auto` } });
   const ack = await gladys.fake.action('test_configuration', {});
   assert.equal(ack.success, true);
   const lines = ack.data.message.fr.split('\n');
@@ -88,10 +82,7 @@ test('action test_configuration reports every store and the cards', async () => 
     'Non compris, il manque le nom du commerce (ex. Leclerc, ou Leclerc = Mo-Sa 08:30-20:00) : auto.',
   );
   assert.equal(lines[4], "Onglet Découverte : aucun type de commerce coché, rien n'est proposé.");
-  assert.equal(
-    lines[5],
-    '2 carte(s) de fidélité : Marie (EAN-13), Paul (Code 128). Non compris : Zoé=abc.',
-  );
+  assert.equal(lines.length, 5);
   assert.ok(ack.data.message.de && ack.data.message.es);
 });
 
@@ -198,7 +189,7 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
 
   // A restart without network: the cache, then the params Gladys keeps.
   const again = createFakeGladys({
-    config: { stores: 'Bio = 24/7', discover_kinds: ['supermarket'] },
+    config: { stores: 'Bio = 24/7', discover_kinds: ['supermarket'], overpass_ch_key: KEY },
     houses: HOUSES,
     devices: [{ ...leclerc, name: 'Leclerc' }],
   });
@@ -207,14 +198,13 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
   createApp(again, {
     timers: false,
     now: fakeClock('2026-10-31T09:00:00Z'),
-    storage: memoryStorage(),
     fetch: down,
     hoursCache,
   });
   await again.connect();
   assert.equal(again.fake.lastState(storeIds(again, 'osm-w101').feature('open')), 1);
   const bare = createFakeGladys({
-    config: { stores: '', discover_kinds: [] },
+    config: { stores: '', discover_kinds: [], overpass_ch_key: KEY },
     houses: HOUSES,
     devices: [{ ...leclerc, name: 'Leclerc' }],
   });
@@ -223,7 +213,6 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
   createApp(bare, {
     timers: false,
     now: fakeClock('2026-10-31T09:00:00Z'),
-    storage: memoryStorage(),
     fetch: offline,
     hoursCache: memoryCache(),
   });
@@ -238,7 +227,12 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
 
 test('test_configuration says why the Discovery tab is empty, and tries again', async () => {
   const gladys = createFakeGladys({
-    config: { stores: '', discover_kinds: ['pharmacy'], search_houses: ['campagne'] },
+    config: {
+      stores: '',
+      discover_kinds: ['pharmacy'],
+      search_houses: ['campagne'],
+      overpass_ch_key: KEY,
+    },
     houses: [{ ...HOUSES[1], latitude: null, longitude: null }],
   });
   const fetch = fakeOverpass(OSM_SHOPS);
@@ -246,7 +240,6 @@ test('test_configuration says why the Discovery tab is empty, and tries again', 
   createApp(gladys, {
     timers: false,
     now: fakeClock('2026-10-30T18:00:00Z'),
-    storage: memoryStorage(),
     fetch,
     hoursCache: memoryCache(),
   });
@@ -268,8 +261,7 @@ test('test_configuration says why the Discovery tab is empty, and tries again', 
     (await test())[1],
     'Onglet Découverte : 1 commerce(s) trouvé(s) autour de Campagne : créez ceux où vous allez.',
   );
-  // Down: every server; back: the main server.
-  assert.equal(fetch.queries.length, OVERPASS_URLS.length + 1);
+  assert.equal(fetch.queries.length, 2);
   assert.ok(
     gladys.fake.discoveredDevices.some((device) => device.name.startsWith('Pharmacie du Marché')),
   );
@@ -291,41 +283,14 @@ test('scene action is_store_open, per store', async () => {
   assert.equal(ack.success, false);
 });
 
-test('scene action set_loyalty_balance sets, adds, spends, never below zero', async () => {
-  const { gladys, storage } = await setup();
-  const device = cardIds(gladys, MARIE).device;
-  const run = async (fields) =>
-    (await gladys.fake.sceneAction('set_loyalty_balance', { device, ...fields })).data.outputs;
-  assert.deepEqual(await run({ mode: 'set', amount: 10 }), { balance: 10 });
-  assert.deepEqual(await run({ mode: 'add', amount: 2.5 }), { balance: 12.5 });
-  assert.deepEqual(await run({ mode: 'add', amount: -20 }), { balance: 0 });
-  assert.equal(storage.balances[MARIE].balance, 0);
-  const unknown = await gladys.fake.sceneAction('set_loyalty_balance', {
-    device: 'ext:test-integration:card:999',
-    mode: 'set',
-    amount: 1,
-  });
-  assert.equal(unknown.success, false);
-});
-
-test('both widgets render exactly as sent, in every language', async () => {
-  const { gladys } = await setup({ balances: { [PAUL]: { balance: 3.2, updated_at: 'x' } } });
+test('the store widget renders exactly as sent, in every language', async () => {
+  const { gladys } = await setup();
   for (const language of ['en', 'fr', 'de', 'es']) {
     for (const store of [undefined, storeIds(gladys, 'leclerc').device]) {
       const ack = await gladys.fake.widgetGet('store_hours', { settings: { store }, language });
       assert.deepEqual(validateWidgetContent(ack.data.content), [], `store ${language}`);
     }
-    for (const card of [undefined, cardIds(gladys, PAUL).device]) {
-      const ack = await gladys.fake.widgetGet('loyalty_card', { settings: { card }, language });
-      assert.deepEqual(validateWidgetContent(ack.data.content), [], `card ${language}`);
-    }
   }
-  const paul = await gladys.fake.widgetGet('loyalty_card', {
-    settings: { card: cardIds(gladys, PAUL).device },
-    language: 'fr',
-  });
-  const tile = paul.data.content.components.find((component) => component.type === 'value');
-  assert.equal(tile.value.replace(/\s/g, ' '), '3,20 €');
 });
 
 test('the store widget: every store at a glance, one in detail', async () => {
@@ -347,12 +312,10 @@ test('the store widget: every store at a glance, one in detail', async () => {
   assert.equal(one.data.content.components[1].value, 60);
 });
 
-test('the widgets stay valid with no store, no card and unreadable hours', async () => {
+test('the widget stays valid with no store and unreadable hours', async () => {
   const empty = await setup({ config: {} });
-  for (const key of ['store_hours', 'loyalty_card']) {
-    const ack = await empty.gladys.fake.widgetGet(key, { settings: {} });
-    assert.deepEqual(validateWidgetContent(ack.data.content), [], key);
-  }
+  const ack = await empty.gladys.fake.widgetGet('store_hours', { settings: {} });
+  assert.deepEqual(validateWidgetContent(ack.data.content), []);
   const { gladys } = await setup({ config: { stores: 'Bio = oops' } });
   const all = await gladys.fake.widgetGet('store_hours', { settings: {}, language: 'fr' });
   assert.deepEqual(validateWidgetContent(all.data.content), []);
@@ -363,40 +326,4 @@ test('the widgets stay valid with no store, no card and unreadable hours', async
   });
   assert.deepEqual(validateWidgetContent(one.data.content), []);
   assert.match(one.data.content.components[1].text.fr, /Les horaires ne sont pas compris/);
-  const card = await gladys.fake.widgetGet('loyalty_card', { settings: {} });
-  assert.deepEqual(validateWidgetContent(card.data.content), []);
-  assert.match(card.data.content.components[0].text.en, /^No loyalty card yet/);
-});
-
-test('the barcode image of a card is served, only for a configured card', async () => {
-  const { gladys } = await setup();
-  const content = (await gladys.fake.widgetGet('loyalty_card', { settings: {} })).data.content;
-  const { key } = content.components.find((component) => component.type === 'image');
-  const ack = await gladys.fake.widgetGetImage(key);
-  assert.equal(ack.success, true);
-  assert.deepEqual(validateWidgetImage(ack.data.image), []);
-  assert.equal((await gladys.fake.widgetGetImage('card-4006381333931')).success, false);
-});
-
-test('widget form: the balance typed is kept and acknowledged', async () => {
-  const { gladys, storage } = await setup();
-  const ack = await gladys.fake.widgetAction(
-    'loyalty_card',
-    'set_balance',
-    { card: MARIE },
-    { settings: {}, values: { balance: 15 } },
-  );
-  assert.equal(ack.success, true);
-  assert.match(ack.data.message.fr, /^Cagnotte de Marie : 15,00/);
-  assert.equal(storage.balances[MARIE].balance, 15);
-
-  const noForm = await gladys.fake.widgetAction(
-    'loyalty_card',
-    'set_balance',
-    { card: MARIE },
-    {
-      settings: {},
-    },
-  );
-  assert.equal(noForm.success, false);
 });

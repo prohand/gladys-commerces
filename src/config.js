@@ -29,8 +29,6 @@ export const DEFAULT_CONFIG = {
   // A personal overpass.ch key (a `secret` field): its server is asked before
   // the public ones. Empty: the public ones only.
   overpass_ch_key: '',
-  // `Name=number; Name=number`, read by src/shops/cards.js. Empty: no card.
-  loyalty_cards: '',
 };
 
 /** Bounds of the number fields, the same as in the manifest. */
@@ -55,7 +53,6 @@ export function normalizeConfig(raw = {}) {
       (kind) => kind in SHOP_KINDS,
     ),
     overpass_ch_key: overpassKey(raw.overpass_ch_key),
-    loyalty_cards: text(raw.loyalty_cards, DEFAULT_CONFIG.loyalty_cards),
   };
 }
 

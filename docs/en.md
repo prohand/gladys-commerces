@@ -1,13 +1,13 @@
 # Horaires Commerces — user guide
 
-This integration brings two things about the shops you go to into Gladys:
+This integration brings into Gladys the **opening hours** of the shops you go to:
+which shops are open, when they open or close, with scenes when a shop opens or
+closes soon.
 
-- their **opening hours**: which shops are open, and when they open or close;
-- your **loyalty cards**, of any brand: their barcode on the dashboard, to scan at
-  the till from your phone, and their balance.
-
-Everything is computed in Gladys: no account, no password. The only call out is to
-OpenStreetMap, to find the hours of shops around your houses (see below).
+Everything is computed in Gladys. The only call out is to OpenStreetMap, through the
+overpass.ch service and with your free key, to find the hours of shops around your
+houses (see **overpass.ch key** below). Without a key, type the hours of your shops
+yourself.
 
 ## Set up
 
@@ -16,16 +16,15 @@ Open **Integrations**, find the integration, install it, then fill in the
 
 | Field                   | What to put                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------ |
-| Shops and opening hours | Your shops and their hours (see below). Leave empty if you only want cards.    |
+| overpass.ch key         | Your free key, to look up the hours on OpenStreetMap (see below).              |
+| Shops and opening hours | Your shops and their hours (see below).                                        |
 | Houses to search around | The Gladys houses to search around. None checked: every house with a location. |
 | Search radius ... (km)  | How far from a house the shops are looked for. Default: 10.                    |
 | Kinds of shops ...      | The kinds of shops offered in the Discovery tab. None checked: none.           |
-| overpass.ch key         | Optional: a steadier OpenStreetMap server (see below how to get the key).      |
 | Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.      |
-| Card numbers            | Your loyalty cards (see below). Leave empty if you have none.                  |
 
 Then click **Test the configuration**: the answer says, shop by shop, whether it is
-open, and which cards were understood.
+open.
 
 Finally, open the **Discovery** tab of the integration and create the devices.
 
@@ -61,7 +60,8 @@ Write only the name: `Leclerc` (or `Leclerc = auto`). The integration then looks
 OpenStreetMap for the shop of that name nearest to your Gladys houses (all the
 houses with a location, set in **Settings → Houses**), and takes its hours. To look
 for other words than the name, write them after `auto:`, for example
-`Bakery = auto: Boulangerie Dupont`. Accents and case do not matter.
+`Bakery = auto: Boulangerie Dupont`. Accents and case do not matter. This needs a free overpass.ch key (see
+**overpass.ch key** below).
 
 - With several houses, the nearest shop of all houses wins: give a precise name
   (`auto: Carrefour Market Vierzon`) to pick one near a given house.
@@ -84,14 +84,12 @@ and its distance, for example `E.Leclerc (Home, 1.3 km)`. Create the ones you go
 in a room of the right house, and rename them as you like: they work like the shops
 you type, and their hours are kept up to date once a day.
 
-### overpass.ch key (optional)
+### overpass.ch key
 
-The hours are looked up on free public OpenStreetMap servers, often busy: the
-lookup then fails ("OpenStreetMap could not be reached") and tries again within the
-hour. For a steadier lookup, get a free key from [overpass.ch](https://overpass.ch):
-its server is asked first, the public ones if it fails. The free plan (no credit
-card, for personal use) gives 10,000 requests a month; the integration makes one a
-day.
+The hours are looked up on OpenStreetMap through the [overpass.ch](https://overpass.ch)
+service, with your own free key: without a key, nothing is looked up (the shops
+typed with their hours work all the same). The free plan (no credit card, for
+personal use) gives 10,000 requests a month; the integration makes one a day.
 
 1. Open [overpass.ch/signup](https://overpass.ch/signup) (**Get a free key** button on
    the home page).
@@ -111,32 +109,16 @@ day.
    `OpenStreetMap answered by api.overpass.ch` when the key works.
 
 The key is personal: do not publish it (forum, code repository, screenshot). A key
-refused (403, monthly quota used up) stops nothing: the public servers take over,
-and the logs say `api.overpass.ch failed (…)`.
-
-### Loyalty cards
-
-One card per entry: a name (brand, holder), `=`, then the number printed under the
-barcode of the card. Separate the cards with `;`:
-
-```
-Leclerc Marie=2900123456785; Carrefour=2900987654327
-```
-
-Spaces and dashes in the number are ignored; the name is optional. Up to 20 cards.
-
-**About the balance.** Shops offer no public API for their cards: a balance cannot be
-read automatically without your password, through an unofficial interface that can
-stop working at any time. The integration does not do that. You enter the balance
-yourself — from the widget, or from a scene — and Gladys keeps it, with its history.
+refused or a monthly quota used up is told by **Test the configuration** and in the
+logs (`OpenStreetMap lookup failed: overpass.ch refused the key (403)`); the hours
+found before stay, and the lookup tries again within the hour.
 
 ## Devices
 
-| Device    | Feature                          | Notes                                     |
-| --------- | -------------------------------- | ----------------------------------------- |
-| Each shop | Open (1 = open, 0 = closed)      | Usable in any scene condition             |
-| Each shop | Minutes until it opens or closes | Updated every minute                      |
-| Each card | Balance (€)                      | Set by you; usable in any scene condition |
+| Device    | Feature                          | Notes                         |
+| --------- | -------------------------------- | ----------------------------- |
+| Each shop | Open (1 = open, 0 = closed)      | Usable in any scene condition |
+| Each shop | Minutes until it opens or closes | Updated every minute          |
 
 ## Scenes
 
@@ -147,35 +129,29 @@ yourself — from the widget, or from a scene — and Gladys keeps it, with its 
   the shop (empty = any). Variables: shop name, time, minutes left. Example: "The
   {{store_name}} closes at {{time}}, {{minutes_left}} minutes left."
 
-"The shop is open" and "the balance is above 10 €" are states: use the device
-conditions of Gladys.
+"The shop is open" is a state: use the device conditions of Gladys.
 
 ### Actions
 
 - **Is a shop open?** (`is_store_open`): choose a shop. Outputs: _open_ (yes/no), the
   time of the next change (HH:MM) and the minutes until then.
-- **Update a loyalty card balance** (`set_loyalty_balance`): choose a card, then _set
-  the balance to_ an amount, or _add to the balance_ (a negative amount to spend).
-  Output: the new balance. The balance never goes below 0.
 
 ## Dashboard
 
 - **Shop hours**: every shop at a glance (open or closed, until when), or — with the
   setting _Shop_ — one shop in detail, with a countdown and today's hours.
-- **Loyalty card**: the barcode of a card (setting _Card_; empty = the first one), its
-  balance and its number, and an **Update the balance** button. Show it at the till:
-  turn the brightness of your phone up for the scanner.
-
-The barcode is an EAN-13 when the card number is one (13 digits, valid check digit),
-a Code 128 otherwise. Both are read by till scanners.
 
 ## Troubleshooting
 
 - **The Discovery tab is empty**: click **Test the configuration**: it looks again
   on OpenStreetMap and says why (house without a location, no kind checked,
   OpenStreetMap unreachable, no shop of these kinds within the radius).
-- **"OpenStreetMap could not be reached"**: the free public servers are often busy.
-  Set a free overpass.ch key (see **overpass.ch key** above).
+- **"overpass.ch key missing"**: paste your key in the configuration (see
+  **overpass.ch key** above).
+- **"OpenStreetMap could not be reached"**: the message says why (key refused, quota
+  used up, server unreachable). Check the key on
+  [overpass.ch/dashboard/keys](https://overpass.ch/dashboard/keys); new try within the
+  hour.
 - **"No shop of this name ... on OpenStreetMap"**: try fewer words, a wider
   **Search radius**, or type the hours by hand.
 - **"No house of Gladys has a location"**: set the house location in **Settings →
@@ -184,19 +160,11 @@ a Code 128 otherwise. Both are read by till scanners.
   the English day names (`Mo`, not `Lu`) and `HH:MM` times (`08:30`, not `8h30`).
 - **A shop is "not understood"**: each entry must be `Name = hours`, entries separated
   by `|`.
-- **A card is "not understood"**: the number must be 6 to 20 digits.
-- **The till does not read the barcode**: check the number, turn the brightness up,
-  and zoom on the widget. If your card has another kind of barcode, tell us in an
-  issue.
 
 ## Data
 
-The balances are kept in the integration's own `/data` volume (`cards.json`) and
-as Gladys states; they never leave your Gladys.
-
 To find the hours (shops written without hours, and the Discovery tab), the words
 looked for, the kinds of shops and the location of your houses (an area of the
-search radius around each) are sent to the OpenStreetMap Overpass API (first to
-`api.overpass.ch` if you gave a key, in Germany; then `overpass-api.de`; when it does not answer, `overpass.private.coffee`, then
-`maps.mail.ru` run by VK), once a day. The hours found are kept in `/data/hours.json`. To
-send nothing: type the hours of every shop and uncheck every kind of shop.
+search radius around each) are sent to the OpenStreetMap Overpass API
+of overpass.ch (`api.overpass.ch`, in Germany), with your key, once a day. The hours found are kept in `/data/hours.json`. To
+send nothing: set no key, and type the hours of every shop.

@@ -32,21 +32,22 @@ the integration, and the advisory is published once users can update.
 In scope: the code of this repository and the Docker image it publishes.
 
 Out of scope: Gladys Assistant itself (report to
-[GladysAssistant/Gladys](https://github.com/GladysAssistant/Gladys/security)) and
-the services of the retailers whose cards are stored.
+[GladysAssistant/Gladys](https://github.com/GladysAssistant/Gladys/security)),
+OpenStreetMap and overpass.ch.
 
 ## How the integration limits its exposure
 
-- It holds no secret and makes no network call: no account, no API key, no password.
-  It never asks for a retailer password.
-- Loyalty card numbers stay in the Gladys configuration and in the integration's
-  `/data/cards.json` (numbers and balances only); the image runs as a non-root user on
-  a read-only root filesystem.
-- The barcode image is generated in the container from the configured numbers only;
-  an image key that is not a configured card is refused.
+- Its only secret is the user's own overpass.ch key, a `secret` field of the Gladys
+  configuration. It is sent only to `api.overpass.ch`, inside the URL as that service
+  asks, and never logged (the logs name the host only). No key: no network call.
+- The only network call is one OpenStreetMap lookup a day: the words looked for, the
+  kinds of shops and an area around each house. User words reach the query only as
+  letters and digits. It never asks for a retailer password.
+- The image runs as a non-root user on a read-only root filesystem; it writes only
+  the hours found, in `/data/hours.json`.
 
 ## Good practices for users
 
 - Keep Gladys and the integration up to date.
-- A loyalty card barcode shown on a dashboard can be scanned by anyone who sees it:
-  do not put that widget on a dashboard displayed in a public place.
+- Keep your overpass.ch key to yourself: do not paste it in a forum, an issue or a
+  screenshot. If it leaks, delete it on overpass.ch and create another.

@@ -1,14 +1,13 @@
 # Horaires Commerces — guide d'utilisation
 
-Cette intégration apporte dans Gladys deux choses sur les commerces où vous allez :
+Cette intégration apporte dans Gladys les **horaires** des commerces où vous allez :
+quels commerces sont ouverts, quand ils ouvrent ou ferment, avec des scènes quand un
+commerce ouvre ou ferme bientôt.
 
-- leurs **horaires** : quels commerces sont ouverts, quand ils ouvrent ou ferment ;
-- vos **cartes de fidélité**, de toutes enseignes : leur code-barres sur le tableau de
-  bord, à scanner en caisse depuis votre téléphone, et leur cagnotte.
-
-Tout est calculé dans Gladys : aucun compte, aucun mot de passe. Le seul appel
-externe va à OpenStreetMap, pour trouver les horaires des commerces autour de vos
-maisons (voir plus bas).
+Tout est calculé dans Gladys. Le seul appel externe va à OpenStreetMap, par le service
+overpass.ch et avec votre clé gratuite, pour trouver les horaires des commerces autour
+de vos maisons (voir **Clé overpass.ch** plus bas). Sans clé, écrivez vous-même les
+horaires de vos commerces.
 
 ## Installation
 
@@ -17,16 +16,15 @@ l'écran **Configuration**.
 
 | Champ                              | Que mettre                                                                                           |
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Commerces et horaires              | Vos commerces et leurs horaires (voir plus bas). Vide si vous voulez seulement les cartes.           |
+| Clé overpass.ch                    | Votre clé gratuite, pour chercher les horaires sur OpenStreetMap (voir plus bas).                    |
+| Commerces et horaires              | Vos commerces et leurs horaires (voir plus bas).                                                     |
 | Maisons autour desquelles chercher | Les maisons Gladys autour desquelles chercher. Aucune cochée : toutes celles qui ont un emplacement. |
 | Rayon de recherche ... (km)        | À quelle distance d'une maison les commerces sont cherchés. Par défaut : 10.                         |
 | Types de commerces ...             | Les types de commerces proposés dans l'onglet Découverte. Aucun coché : aucun.                       |
-| Clé overpass.ch                    | Facultatif : un serveur OpenStreetMap plus sûr (voir plus bas comment créer la clé).                 |
 | Préavis avant ... (min)            | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.                     |
-| Numéros de carte                   | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                                  |
 
 Cliquez ensuite sur **Tester la configuration** : la réponse dit, commerce par
-commerce, s'il est ouvert, et quelles cartes ont été comprises.
+commerce, s'il est ouvert.
 
 Enfin, ouvrez l'onglet **Découverte** de l'intégration et créez les appareils.
 
@@ -64,7 +62,8 @@ alors sur OpenStreetMap le commerce de ce nom le plus proche de vos maisons Glad
 (toutes les maisons dont l'emplacement est renseigné dans **Paramètres → Maisons**),
 et prend ses horaires. Pour chercher d'autres mots que le nom, écrivez-les après
 `auto:`, par exemple `Boulangerie = auto: Boulangerie Dupont`. Les accents et les
-majuscules ne comptent pas.
+majuscules ne comptent pas. Il faut pour cela une clé gratuite overpass.ch (voir
+**Clé overpass.ch** plus bas).
 
 - Avec plusieurs maisons, le commerce le plus proche de toutes les maisons gagne :
   donnez un nom précis (`auto: Carrefour Market Vierzon`) pour en choisir un près
@@ -91,14 +90,13 @@ allez, dans une pièce de la bonne maison, et renommez-les comme vous voulez : i
 marchent comme les commerces que vous écrivez, et leurs horaires sont mis à jour
 une fois par jour.
 
-### Clé overpass.ch (facultatif)
+### Clé overpass.ch
 
-Les horaires sont cherchés sur des serveurs OpenStreetMap publics et gratuits,
-souvent chargés : la recherche échoue alors (« OpenStreetMap n'a pas pu être joint »)
-et réessaie dans l'heure. Pour une recherche plus sûre, prenez une clé gratuite chez
-[overpass.ch](https://overpass.ch) : son serveur est interrogé en premier, les
-serveurs publics s'il échoue. La formule gratuite (sans carte bancaire, pour un usage
-personnel) donne 10 000 requêtes par mois ; l'intégration en fait une par jour.
+Les horaires sont cherchés sur OpenStreetMap par le service
+[overpass.ch](https://overpass.ch), avec votre propre clé gratuite : sans clé, rien
+n'est cherché (les commerces écrits avec leurs horaires marchent quand même). La
+formule gratuite (sans carte bancaire, pour un usage personnel) donne 10 000 requêtes
+par mois ; l'intégration en fait une par jour.
 
 1. Ouvrez [overpass.ch/signup](https://overpass.ch/signup) (bouton **Get a free key**
    sur l'accueil).
@@ -120,34 +118,16 @@ personnel) donne 10 000 requêtes par mois ; l'intégration en fait une par jour
    `OpenStreetMap answered by api.overpass.ch` quand la clé marche.
 
 La clé est personnelle : ne la publiez pas (forum, dépôt de code, capture d'écran).
-Une clé refusée (403, quota du mois épuisé) n'arrête rien : les serveurs publics
-prennent le relais, et les logs disent `api.overpass.ch failed (…)`.
-
-### Cartes de fidélité
-
-Une carte par entrée : un nom (enseigne, titulaire), `=`, puis le numéro imprimé sous
-le code-barres de la carte. Séparez les cartes par `;` :
-
-```
-Leclerc Marie=2900123456785; Carrefour=2900987654327
-```
-
-Les espaces et tirets du numéro sont ignorés ; le nom est facultatif. 20 cartes au
-plus.
-
-**À propos de la cagnotte.** Les enseignes ne proposent pas d'API publique pour leurs
-cartes : une cagnotte ne peut pas être lue automatiquement sans votre mot de passe,
-par une interface non officielle qui peut cesser de marcher à tout moment.
-L'intégration ne le fait pas. Vous saisissez la cagnotte vous-même — depuis le widget
-ou une scène — et Gladys la garde, avec son historique.
+Une clé refusée ou un quota du mois épuisé est dit par **Tester la configuration** et
+dans les logs (`OpenStreetMap lookup failed: overpass.ch refused the key (403)`) ; les
+horaires déjà trouvés restent, et la recherche réessaie dans l'heure.
 
 ## Appareils
 
-| Appareil        | Fonctionnalité                       | Remarques                                        |
-| --------------- | ------------------------------------ | ------------------------------------------------ |
-| Chaque commerce | Ouvert (1 = ouvert, 0 = fermé)       | Utilisable dans toute condition de scène         |
-| Chaque commerce | Minutes avant ouverture ou fermeture | Mis à jour chaque minute                         |
-| Chaque carte    | Cagnotte (€)                         | Saisie par vous ; utilisable dans les conditions |
+| Appareil        | Fonctionnalité                       | Remarques                                |
+| --------------- | ------------------------------------ | ---------------------------------------- |
+| Chaque commerce | Ouvert (1 = ouvert, 0 = fermé)       | Utilisable dans toute condition de scène |
+| Chaque commerce | Minutes avant ouverture ou fermeture | Mis à jour chaque minute                 |
 
 ## Scènes
 
@@ -159,37 +139,31 @@ ou une scène — et Gladys la garde, avec son historique.
   heure, minutes restantes. Exemple : « {{store_name}} ferme à {{time}}, plus que
   {{minutes_left}} minutes. »
 
-« Le commerce est ouvert » et « la cagnotte dépasse 10 € » sont des états : utilisez
-les conditions sur appareil de Gladys.
+« Le commerce est ouvert » est un état : utilisez les conditions sur appareil de
+Gladys.
 
 ### Actions
 
 - **Un commerce est-il ouvert ?** (`is_store_open`) : choisissez un commerce. Sorties :
   _ouvert_ (oui/non), l'heure du prochain changement (HH:MM) et les minutes d'ici là.
-- **Mettre à jour une cagnotte** (`set_loyalty_balance`) : choisissez une carte, puis
-  _fixer la cagnotte à_ un montant, ou _ajouter à la cagnotte_ (un montant négatif
-  pour dépenser). Sortie : la nouvelle cagnotte. Elle ne descend jamais sous 0.
 
 ## Tableau de bord
 
 - **Horaires des commerces** : tous les commerces d'un coup d'œil (ouvert ou fermé,
   jusqu'à quand), ou — avec le réglage _Commerce_ — un commerce en détail, avec un
   compte à rebours et les horaires du jour.
-- **Carte de fidélité** : le code-barres d'une carte (réglage _Carte_ ; vide = la
-  première), sa cagnotte et son numéro, et un bouton **Modifier la cagnotte**.
-  Présentez-le en caisse : montez la luminosité du téléphone pour le scanner.
-
-Le code-barres est un EAN-13 quand le numéro de carte en est un (13 chiffres, clé de
-contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 
 ## Dépannage
 
 - **L'onglet Découverte est vide** : cliquez sur **Tester la configuration** : il
   cherche de nouveau sur OpenStreetMap et dit pourquoi (maison sans emplacement, aucun
   type coché, OpenStreetMap injoignable, aucun commerce de ces types dans le rayon).
-- **« OpenStreetMap n'a pas pu être joint »** : les serveurs publics gratuits sont
-  souvent chargés. Mettez une clé gratuite overpass.ch (voir **Clé overpass.ch**
-  plus haut).
+- **« Clé overpass.ch manquante »** : collez votre clé dans la configuration (voir
+  **Clé overpass.ch** plus haut).
+- **« OpenStreetMap n'a pas pu être joint »** : le message dit pourquoi (clé refusée,
+  quota épuisé, serveur injoignable). Vérifiez la clé sur
+  [overpass.ch/dashboard/keys](https://overpass.ch/dashboard/keys) ; nouvel essai dans
+  l'heure.
 - **« Aucun commerce de ce nom ... sur OpenStreetMap »** : essayez moins de mots, un
   **Rayon de recherche** plus grand, ou écrivez les horaires à la main.
 - **« Aucune maison de Gladys n'a d'emplacement »** : renseignez l'emplacement de la
@@ -199,21 +173,12 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
   pas `8h30`).
 - **Un commerce est « non compris »** : chaque entrée doit être `Nom = horaires`,
   entrées séparées par `|`.
-- **Une carte est « non comprise »** : le numéro doit faire 6 à 20 chiffres.
-- **La caisse ne lit pas le code-barres** : vérifiez le numéro, montez la luminosité
-  et zoomez sur le widget. Si votre carte porte un autre type de code-barres,
-  signalez-le dans une issue.
 
 ## Données
-
-Les cagnottes sont gardées dans le volume `/data` de l'intégration (`cards.json`) et
-comme états Gladys ; elles ne sortent jamais de votre Gladys.
 
 Pour trouver les horaires (commerces écrits sans horaires, et onglet Découverte), les
 mots cherchés, les types de commerces et l'emplacement de vos maisons (une zone du
 rayon de recherche autour de chacune) sont envoyés à l'API Overpass d'OpenStreetMap
-(d'abord à `api.overpass.ch` si vous avez mis une clé, en Allemagne ; puis
-`overpass-api.de` ; s'il ne répond pas, `overpass.private.coffee`, puis `maps.mail.ru`
-tenu par VK), une fois par jour. Les horaires trouvés sont gardés dans
-`/data/hours.json`. Pour ne rien envoyer : écrivez les horaires de tous les commerces
-et décochez tous les types de commerces.
+d'overpass.ch (`api.overpass.ch`, en Allemagne), avec votre clé, une fois par jour. Les horaires trouvés sont gardés dans
+`/data/hours.json`. Pour ne rien envoyer : ne mettez pas de clé, et écrivez les horaires
+de tous les commerces.

@@ -55,7 +55,7 @@ export function storeSlug(name) {
 
 /**
  * Why a store looked up on OpenStreetMap has no hours: `reason` is `pending`,
- * `not_found`, `unreachable`, `no_house`, `no_access` or `not_understood`
+ * `not_found`, `unreachable`, `no_key`, `no_house`, `no_access` or `not_understood`
  * (with `hours` and `cause`). See describeHoursError.
  */
 export class LookupError extends Error {
@@ -416,6 +416,13 @@ function describeLookupError(error) {
         de: `Kein Geschäft dieses Namens mit Öffnungszeiten auf OpenStreetMap im Umkreis von ${error.radiusKm} km Ihrer Häuser. Geben Sie seine Zeiten statt auto ein, z. B. Mo-Sa 08:30-20:00.`,
         es: `Ningún comercio con este nombre y horario en OpenStreetMap a menos de ${error.radiusKm} km de sus casas. Escriba su horario en lugar de auto, p. ej. Mo-Sa 08:30-20:00.`,
       };
+    case 'no_key':
+      return {
+        en: 'To look for the opening hours on OpenStreetMap, paste your free overpass.ch key in the configuration (steps in the documentation), or type the hours instead of auto, e.g. Mo-Sa 08:30-20:00.',
+        fr: 'Pour chercher les horaires sur OpenStreetMap, collez votre clé gratuite overpass.ch dans la configuration (étapes dans la documentation), ou écrivez les horaires à la place de auto, ex. Mo-Sa 08:30-20:00.',
+        de: 'Um die Öffnungszeiten auf OpenStreetMap zu suchen, fügen Sie Ihren kostenlosen overpass.ch-Schlüssel in die Konfiguration ein (Schritte in der Dokumentation), oder geben Sie die Zeiten statt auto ein, z. B. Mo-Sa 08:30-20:00.',
+        es: 'Para buscar el horario en OpenStreetMap, pegue su clave gratuita de overpass.ch en la configuración (pasos en la documentación), o escriba el horario en lugar de auto, p. ej. Mo-Sa 08:30-20:00.',
+      };
     case 'no_house':
       return {
         en: 'No house of Gladys has a location: set it in Settings → Houses, the hours are looked up around it.',
@@ -453,6 +460,14 @@ function describeLookupError(error) {
 export function describeHoursShort(error) {
   if (error?.reason === 'pending') {
     return { en: 'Searching…', fr: 'Recherche…', de: 'Suche…', es: 'Buscando…' };
+  }
+  if (error?.reason === 'no_key') {
+    return {
+      en: 'overpass.ch key missing',
+      fr: 'Clé overpass.ch manquante',
+      de: 'overpass.ch-Schlüssel fehlt',
+      es: 'Falta la clave de overpass.ch',
+    };
   }
   if (error instanceof LookupError && error.reason !== 'not_understood') {
     return {

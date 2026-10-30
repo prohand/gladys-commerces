@@ -11,12 +11,11 @@
 //     configuration (supermarket, bakery…) are offered in the Discovery tab,
 //     per house; the ones the user creates keep their hours up to date.
 //
-// This is the only network call of the integration: the Overpass API
-// receives the words looked for, the kinds, and an area around each house.
-// The main server is often busy (timeouts, 502): the other free public
-// servers are asked in turn when it fails, the same query, so the data sent
-// stays the same. Never a regional server: it would find no shop and that
-// answer would be kept a day.
+// This is the only network call of the integration: the Overpass API of
+// overpass.ch, with the user's own free key, receives the words looked for,
+// the kinds, and an area around each house. Only that server: the free public
+// ones were too often busy (timeouts, 502), and the fallbacks meant sending
+// the houses to more operators. No key: no call, the stores say why.
 // The results are kept in /data/hours.json, so a restart without network
 // keeps the hours, and refreshed once a day (the shops update their hours on
 // the map from time to time).
@@ -28,14 +27,6 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 
 const logger = createLogger({ name: 'finder' });
 
-/** The free public Overpass servers, asked in this order until one answers. */
-export const OVERPASS_URLS = [
-  'https://overpass-api.de/api/interpreter',
-  // Formerly overpass.kumi.systems.
-  'https://overpass.private.coffee/api/interpreter',
-  // VK Maps.
-  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-];
 const USER_AGENT =
   'gladys-horaires-commerces (+https://github.com/prohand/gladys-horaires-commerces)';
 
@@ -43,10 +34,7 @@ const USER_AGENT =
 export const REFRESH_MS = 24 * 3600_000;
 /** After a failed lookup, the next try. */
 export const RETRY_MS = 3600_000;
-/**
- * The server of a personal overpass.ch key (free account), asked before the
- * public ones: the key is a path segment of the URL.
- */
+/** The server of a personal overpass.ch key (free account): the key is a path segment. */
 export function overpassChUrl(key) {
   return `https://api.overpass.ch/v1/${encodeURIComponent(key)}/interpreter`;
 }
@@ -63,9 +51,8 @@ export function overpassKey(value) {
 }
 
 /**
- * Per server, a little over the `[timeout:25]` of the query: a lookup around
- * a few houses takes seconds, and a busy server admits a short query sooner.
- * With every server down, a lookup gives up within a minute and a half.
+ * A little over the `[timeout:25]` of the query: a lookup around a few houses
+ * takes seconds, and a busy server admits a short query sooner.
  */
 const TIMEOUT_MS = 30_000;
 
@@ -350,7 +337,7 @@ const unique = (list = []) => [...new Set(list)].sort();
  *
  *   - `results[search]`: the shop found (`{ key, name, city, hours, osm,
  *     house, distance }`) or why there is none (`{ error, radiusKm? }`, error
- *     being `not_found`, `unreachable`, `no_house` or `no_access`);
+ *     being `not_found`, `unreachable`, `no_key`, `no_house` or `no_access`);
  *   - `nearby`: the shops to offer in the Discovery tab (nearbyShops);
  *   - `shops[key]`: the shops created from the Discovery tab, by key.
  */
@@ -378,7 +365,7 @@ export class HoursFinder {
     this.failures = 0;
     this.loaded = false;
     // How the last lookup went, for the test action: `idle` (never asked),
-    // `ok`, `no_house`, `no_access` or `unreachable` (with `message`).
+    // `ok`, `no_key`, `no_house`, `no_access` or `unreachable` (with `message`).
     this.status = { state: 'idle', houses: [] };
     this.running = null;
   }
@@ -453,7 +440,23 @@ export class HoursFinder {
     }
     const before = this.snapshot();
     const changed = () => this.snapshot() !== before;
+    // Only a shop or a "not found" is an answer: anything else is asked again.
+    const answered = (result) => Boolean(result?.hours) || result?.error === 'not_found';
+    const lastAnswers = (error) => {
+      this.results = Object.fromEntries(
+        searches.map((search) => [
+          search,
+          answered(this.results[search]) ? this.results[search] : { error },
+        ]),
+      );
+      return changed();
+    };
 
+    if (!key) {
+      // No server to ask: the hours found before stay, the others wait for a key.
+      this.status = { state: 'no_key', houses: [] };
+      return lastAnswers('no_key');
+    }
     const houses = await locatedHouses(this.gladys, selectors);
     if (!houses || houses.length === 0) {
       const error = houses ? 'no_house' : 'no_access';
@@ -471,35 +474,24 @@ export class HoursFinder {
       kinds,
     });
     const now = this.now().getTime();
-    // Only a shop or a "not found" is an answer: anything else is asked again.
-    const answered = (result) => Boolean(result?.hours) || result?.error === 'not_found';
     const stale =
       signature !== this.signature ||
       now - this.checkedAt >= REFRESH_MS ||
       !searches.every((search) => answered(this.results[search])) ||
       !known.every((key) => this.shop(key));
-    const lastAnswers = () => {
-      this.results = Object.fromEntries(
-        searches.map((search) => [
-          search,
-          answered(this.results[search]) ? this.results[search] : { error: 'unreachable' },
-        ]),
-      );
-      return changed();
-    };
     if (!stale) {
       this.status = { state: 'ok', houses: houses.map((house) => house.name) };
       return false;
     }
     if (!force && now - this.failedAt < RETRY_MS) {
-      return lastAnswers();
+      return lastAnswers('unreachable');
     }
 
     let elements;
     try {
       elements = await this.overpass(
+        overpassChUrl(key),
         overpassQuery({ searches, kinds, known, houses, radiusMeters: radius }),
-        key ? [overpassChUrl(key), ...OVERPASS_URLS] : OVERPASS_URLS,
       );
     } catch (err) {
       logger.warn(`OpenStreetMap lookup failed: ${err.message}`);
@@ -511,8 +503,9 @@ export class HoursFinder {
         houses: houses.map((house) => house.name),
       };
       // The hours found before stay: a shop rarely changes its hours.
-      return lastAnswers();
+      return lastAnswers('unreachable');
     }
+    logger.info('OpenStreetMap answered by api.overpass.ch');
     this.failedAt = 0;
     this.status = { state: 'ok', houses: houses.map((house) => house.name) };
     this.signature = signature;
@@ -559,27 +552,8 @@ export class HoursFinder {
     return JSON.stringify([this.results, this.nearby, this.shops]);
   }
 
-  /**
-   * The query on each server in turn, until one answers: the last error if
-   * none. Only the host is logged: an overpass.ch URL holds the key.
-   */
-  async overpass(query, servers = OVERPASS_URLS) {
-    for (const [index, url] of servers.entries()) {
-      const next = servers[index + 1];
-      try {
-        const elements = await this.ask(url, query);
-        logger.info(`OpenStreetMap answered by ${new URL(url).host}`);
-        return elements;
-      } catch (err) {
-        if (!next) {
-          throw err;
-        }
-        logger.warn(`${new URL(url).host} failed (${err.message}), trying ${new URL(next).host}`);
-      }
-    }
-  }
-
-  async ask(url, query) {
+  /** The query on the server of the key. Never log the URL: it holds the key. */
+  async overpass(url, query) {
     const response = await this.fetch(url, {
       method: 'POST',
       headers: {
@@ -589,6 +563,12 @@ export class HoursFinder {
       body: new URLSearchParams({ data: query }).toString(),
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`overpass.ch refused the key (${response.status})`);
+    }
+    if (response.status === 429) {
+      throw new Error('overpass.ch: too many requests, or the monthly quota is used up (429)');
+    }
     if (!response.ok) {
       throw new Error(`Overpass answered ${response.status}`);
     }
