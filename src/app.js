@@ -33,7 +33,7 @@ export function createApp(gladys, deps = {}) {
     ...(deps.fetch && { fetch: deps.fetch }),
     ...(deps.hoursCache && { cache: deps.hoursCache }),
   });
-  const watcher = new StoreWatcher({ gladys, now, lookup: (search) => finder.get(search) });
+  const watcher = new StoreWatcher({ gladys, now, finder });
   const wallet = new Wallet({ gladys, now, ...(deps.storage && { storage: deps.storage }) });
   let config = null;
   let lookupTimer = null;
@@ -41,22 +41,32 @@ export function createApp(gladys, deps = {}) {
   function configure(raw) {
     config = normalizeConfig(raw);
     watcher.configure(config);
+    watcher.setDevices(gladys.devices);
     wallet.configure(config);
     return config;
   }
   configure(gladys.config ?? {});
 
   /**
-   * Look the `auto` stores up on OpenStreetMap when needed (HoursFinder says
-   * when), then publish their new state. Never throws: a store without hours
-   * says why on the screens.
+   * Look up on OpenStreetMap when needed (HoursFinder says when) the stores
+   * without hours and the shops around the houses, then publish the shops to
+   * offer in the Discovery tab and the new states. Never throws: a store
+   * without hours says why on the screens.
    */
   async function findHours() {
     try {
-      if (!(await finder.refresh(watcher.searches, config.search_radius_km))) {
+      const changed = await finder.refresh({
+        searches: watcher.searches,
+        radiusKm: config.search_radius_km,
+        kinds: config.discover_kinds,
+        houses: config.search_houses,
+        known: watcher.known,
+      });
+      if (!changed) {
         return;
       }
       watcher.resolve();
+      await gladys.publishDiscoveredDevices(devices());
       await watcher.tick();
       gladys.requestWidgetRefresh(WIDGET_KEYS.STORE_HOURS);
     } catch (err) {
@@ -64,7 +74,7 @@ export function createApp(gladys, deps = {}) {
     }
   }
 
-  const devices = () => buildDiscoveredDevices(gladys, watcher.stores, wallet.cards);
+  const devices = () => buildDiscoveredDevices(gladys, watcher.stores, wallet.cards, finder.nearby);
 
   /** (Re)start the stores clock and publish what is known. */
   async function run() {
@@ -84,14 +94,31 @@ export function createApp(gladys, deps = {}) {
   }
 
   gladys.onScanRequest(async () => {
+    await findHours();
     await gladys.publishDiscoveredDevices(devices());
   });
 
   // A device just created has none of the states published before it
   // existed (Gladys drops them): the SDK forgets them, publish them again.
-  gladys.onDeviceCreated(async () => {
+  // A shop created from the Discovery tab becomes a store.
+  gladys.onDeviceCreated(async (device) => {
+    watcher.setDevices([
+      ...gladys.devices.filter((other) => other.external_id !== device.external_id),
+      device,
+    ]);
     await watcher.tick();
     await wallet.publishAll();
+  });
+
+  gladys.onDeviceUpdated(async (device) => {
+    watcher.setDevices([
+      ...gladys.devices.filter((other) => other.external_id !== device.external_id),
+      device,
+    ]);
+  });
+
+  gladys.onDeviceDeleted(async (device) => {
+    watcher.setDevices(gladys.devices.filter((other) => other.external_id !== device.external_id));
   });
 
   for (const [key, handler] of Object.entries(actionHandlers({ watcher, wallet }))) {

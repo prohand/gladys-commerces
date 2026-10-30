@@ -14,6 +14,7 @@ import { BALANCE_MODES, SCENE_ACTIONS, SCENE_TRIGGERS } from '../src/capabilitie
 import { CARD_WIDGET_ACTIONS, WIDGET_KEYS } from '../src/capabilities/widgets.js';
 import { MAX_BALANCE } from '../src/devices/index.js';
 import { parseCards } from '../src/shops/cards.js';
+import { SHOP_KINDS } from '../src/shops/finder.js';
 import { parseStores } from '../src/shops/stores.js';
 import { LANGUAGES } from '../src/i18n.js';
 
@@ -38,7 +39,7 @@ test('version, image and cover agree with package.json and with each other', () 
 
 test('a local integration, for France, on Gladys 5.3 or later', () => {
   // The states are computed in the container: the only call out is the
-  // OpenStreetMap lookup of the stores written `auto`, near the houses.
+  // OpenStreetMap lookup around the houses.
   assert.deepEqual(manifest.transports, ['local']);
   assert.equal(manifest.location, true);
   assert.deepEqual(manifest.countries, ['FR']);
@@ -161,6 +162,16 @@ test('the widgets are the ones the code renders', () => {
 
 const FIELD_TYPES = ['string', 'number', 'boolean', 'select', 'multi_select', 'secret', 'section'];
 
+test('the kinds of shops to discover are the ones the code knows', () => {
+  const kinds = manifest.config_schema.find((field) => field.key === 'discover_kinds');
+  assert.deepEqual(
+    kinds.options.map((option) => option.value),
+    Object.keys(SHOP_KINDS),
+  );
+  const houses = manifest.config_schema.find((field) => field.key === 'search_houses');
+  assert.equal(houses.source, 'houses');
+});
+
 test('every field uses a type the store accepts', () => {
   const fields = [
     ...manifest.config_schema,
@@ -179,7 +190,7 @@ test('every field uses a type the store accepts', () => {
       assert.equal(field.type, 'number', field.key);
     }
     if (field.source !== undefined) {
-      assert.equal(field.source, 'devices');
+      assert.ok(['devices', 'houses'].includes(field.source), field.key);
       assert.equal(field.options, undefined, `${field.key}: source and options together`);
     }
   }

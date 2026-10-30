@@ -18,6 +18,11 @@ the version's GitHub Release.
   `Name = auto: words`) takes the hours of the nearest matching shop on
   OpenStreetMap, around the Gladys houses (new "Search radius" setting, location
   access of the houses). Looked up once a day, kept in `/data/hours.json`.
+- Shops around the houses in the Discovery tab: the 3 nearest shops of each kind
+  checked (supermarkets, bakeries, pharmacies, post offices, recycling centres…) that
+  publish their hours on OpenStreetMap, listed per Gladys house with their distance.
+  A shop created from there works like a typed one, its hours kept up to date. New
+  settings: the houses to search around, the kinds of shops to offer.
 - Loyalty cards of any brand: one device per card with its balance, entered by the
   user; the card's barcode (EAN-13 or Code 128) on the dashboard.
 - Scene triggers: a shop opens soon, a shop closes soon (filter: the shop).

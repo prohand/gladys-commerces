@@ -19,7 +19,7 @@
 
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { TIME_ZONE } from '../config.js';
-import { FEATURES, storeIds } from '../devices/index.js';
+import { FEATURES, OSM_PREFIX, PARAMS, storeIds } from '../devices/index.js';
 import { localize, pick } from '../i18n.js';
 import { autoSearch } from './finder.js';
 import { formatRanges, parseOpeningHours, storeStatus } from './hours.js';
@@ -27,6 +27,8 @@ import { formatRanges, parseOpeningHours, storeStatus } from './hours.js';
 const logger = createLogger({ name: 'stores' });
 
 const TICK_MS = 60_000;
+
+const NO_FINDER = { get: () => undefined, shop: () => undefined };
 
 /** At most this many stores: the ones a household goes to. */
 export const MAX_STORES = 10;
@@ -136,14 +138,18 @@ export class StoreWatcher {
    * @param {object} options
    * @param {object} options.gladys the SDK instance
    * @param {() => Date} [options.now] clock, for the tests
-   * @param {(search: string) => object|undefined} [options.lookup] what
-   *   OpenStreetMap gave for a search (HoursFinder.get)
+   * @param {{ get: Function, shop: Function }} [options.finder] what
+   *   OpenStreetMap gave, per search and per shop key (HoursFinder)
    */
-  constructor({ gladys, now = () => new Date(), lookup = () => undefined }) {
+  constructor({ gladys, now = () => new Date(), finder = NO_FINDER }) {
     this.gladys = gladys;
     this.now = now;
-    this.lookup = lookup;
+    this.finder = finder;
     this.config = null;
+    // The stores typed in the configuration, those created from the
+    // Discovery tab, and both: the ones published every minute.
+    this.typed = [];
+    this.created = [];
     this.stores = [];
     this.errors = [];
     this.timer = null;
@@ -155,9 +161,9 @@ export class StoreWatcher {
   /** Read the stores of a (new) configuration. */
   configure(config) {
     this.config = config;
-    ({ stores: this.stores, errors: this.errors } = parseStores(config.stores));
-    this.resolve();
-    for (const store of this.stores.filter((s) => s.error && !s.search)) {
+    ({ stores: this.typed, errors: this.errors } = parseStores(config.stores));
+    this.merge();
+    for (const store of this.typed.filter((s) => s.error && !s.search)) {
       logger.warn(`Opening hours of "${store.name}" not understood: ${store.error.message}`);
     }
     for (const entry of this.errors) {
@@ -165,23 +171,64 @@ export class StoreWatcher {
     }
   }
 
-  /** The searches of the stores to look up on OpenStreetMap. */
-  get searches() {
-    return this.stores.filter((store) => store.search).map((store) => store.search);
+  /**
+   * Read the stores created from the Discovery tab, among the devices of the
+   * integration: their id is `osm-<key>`, their name the one in Gladys.
+   */
+  setDevices(devices = []) {
+    const prefix = storeIds(this.gladys, OSM_PREFIX).device;
+    this.created = devices
+      .filter((device) => device.external_id?.startsWith(prefix))
+      .map((device) => {
+        const id = device.external_id.slice(prefix.length - OSM_PREFIX.length);
+        const param = (name) => device.params?.find((p) => p.name === name)?.value;
+        return {
+          id,
+          key: id.slice(OSM_PREFIX.length),
+          name: device.name || id,
+          search: null,
+          // The hours Gladys keeps, for a start without the cache.
+          saved: param(PARAMS.HOURS)
+            ? { hours: param(PARAMS.HOURS), osm: param(PARAMS.URL) }
+            : null,
+        };
+      })
+      .filter((store) => !this.typed.some((typed) => typed.id === store.id));
+    this.merge();
   }
 
-  /** Give the stores to look up the hours known for them now. */
+  merge() {
+    this.stores = [...this.typed, ...this.created];
+    this.resolve();
+  }
+
+  /** The searches of the stores to look up on OpenStreetMap. */
+  get searches() {
+    return this.typed.filter((store) => store.search).map((store) => store.search);
+  }
+
+  /** The keys of the shops created from the Discovery tab. */
+  get known() {
+    return this.created.map((store) => store.key);
+  }
+
+  /** Give the stores found on OpenStreetMap the hours known for them now. */
   resolve() {
-    for (const store of this.stores.filter((s) => s.search)) {
-      const result = this.lookup(store.search);
-      Object.assign(store, { hours: '', schedule: null, place: null });
+    for (const store of this.stores.filter((s) => s.search || s.key)) {
+      const result = store.key
+        ? (this.finder.shop(store.key) ?? store.saved)
+        : this.finder.get(store.search);
+      Object.assign(store, { hours: '', schedule: null, place: null, shop: null });
       if (!result) {
         store.error = new LookupError('pending');
       } else if (!result.hours) {
         store.error = new LookupError(result.error, { radiusKm: result.radiusKm });
       } else {
         const { hours, ...place } = result;
-        store.place = place;
+        store.place = place.name ? place : null;
+        if (store.key) {
+          store.shop = result;
+        }
         try {
           Object.assign(store, { hours, schedule: parseOpeningHours(hours), error: null });
         } catch (cause) {
@@ -428,9 +475,13 @@ export function describePlace(place, language) {
   if (!place) {
     return null;
   }
+  const where = [place.name, place.city].filter(Boolean).join(', ');
+  if (place.distance === undefined) {
+    return where;
+  }
   const distance =
     place.distance < 1000
       ? `${place.distance} m`
       : `${new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(place.distance / 1000)} km`;
-  return `${[place.name, place.city].filter(Boolean).join(', ')} · ${distance}`;
+  return `${where} · ${distance}`;
 }

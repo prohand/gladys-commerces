@@ -21,8 +21,9 @@ import {
 const CARDS = `Marie=${MARIE}; Paul=${PAUL}`;
 const STORES = 'Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00';
 
+// No discovery unless a test asks for it: the lists stay the typed ones.
 async function setup({ config = { stores: STORES, loyalty_cards: CARDS }, balances = {} } = {}) {
-  const gladys = createFakeGladys({ config, houses: HOUSES });
+  const gladys = createFakeGladys({ config: { discover_kinds: [], ...config }, houses: HOUSES });
   const clock = fakeClock('2026-10-30T18:00:00Z'); // Friday 19:00 in Paris
   const storage = memoryStorage(balances);
   const fetch = fakeOverpass(OSM_SHOPS);
@@ -57,7 +58,7 @@ test('scan request publishes the devices again', async () => {
 
 test('a new configuration re-reads the stores and the cards', async () => {
   const { gladys, app } = await setup();
-  await gladys.fake.configUpdated({ stores: 'Marché = Mo-Su off' });
+  await gladys.fake.configUpdated({ stores: 'Marché = Mo-Su off', discover_kinds: [] });
   assert.deepEqual(
     gladys.fake.discoveredDevices.map((device) => device.name),
     ['Marché'],
@@ -133,7 +134,7 @@ test('stores written auto get their hours from OpenStreetMap, near the houses', 
   assert.equal(ask.success, false);
 
   // Saving the form again does not ask OpenStreetMap again.
-  await gladys.fake.configUpdated({ stores: 'Leclerc = auto | Bio = 24/7' });
+  await gladys.fake.configUpdated({ stores: 'Leclerc = auto | Bio = 24/7', discover_kinds: [] });
   assert.equal(fetch.queries.length, 1);
   assert.equal(gladys.fake.lastState(storeIds(gladys, 'leclerc').feature('open')), 1);
 });
@@ -141,6 +142,88 @@ test('stores written auto get their hours from OpenStreetMap, near the houses', 
 test('no store written auto: the houses and OpenStreetMap are left alone', async () => {
   const { fetch } = await setup();
   assert.equal(fetch.queries.length, 0);
+});
+
+test('Discovery tab: shops near each house, the ones created become stores', async () => {
+  const { gladys, fetch, hoursCache } = await setup({
+    config: {
+      stores: 'Bio = 24/7',
+      discover_kinds: ['supermarket', 'pharmacy', 'recycling_centre'],
+    },
+  });
+  assert.equal(fetch.queries.length, 1);
+  const names = gladys.fake.discoveredDevices.map((device) => device.name);
+  assert.deepEqual(names.slice(0, 1), ['Bio']);
+  assert.deepEqual(
+    new Set(names.slice(1)),
+    new Set([
+      'E.Leclerc (Maison, 1.3 km)',
+      'Pharmacie Centrale (Maison, 58 m)',
+      'Pharmacie du Marché (Campagne, 180 m)',
+      'Déchetterie de Vierzon (Campagne, 1.6 km)',
+    ]),
+  );
+  const leclerc = gladys.fake.discoveredDevices.find((device) =>
+    device.name.startsWith('E.Leclerc'),
+  );
+  assert.equal(leclerc.external_id, storeIds(gladys, 'osm-w101').device);
+  assert.deepEqual(leclerc.params, [
+    { name: 'OSM_OPENING_HOURS', value: 'Mo-Sa 08:30-20:00; PH off' },
+    { name: 'OSM_URL', value: 'https://www.openstreetmap.org/way/101' },
+  ]);
+
+  // The user creates it, under a name of their own.
+  await gladys.fake.deviceCreated({ ...leclerc, name: 'Leclerc' });
+  assert.equal(gladys.fake.lastState(storeIds(gladys, 'osm-w101').feature('open')), 1);
+  const lines = (await gladys.fake.action('test_configuration', {})).data.message.fr.split('\n');
+  assert.equal(
+    lines[1],
+    'Leclerc : Ouvert, ferme à 20:00. (OpenStreetMap : E.Leclerc, Bourges · 1,3 km, Mo-Sa 08:30-20:00; PH off)',
+  );
+  const ask = await gladys.fake.sceneAction('is_store_open', { device: leclerc.external_id });
+  assert.equal(ask.data.outputs.open, true);
+  const widget = await gladys.fake.widgetGet('store_hours', { settings: {}, language: 'fr' });
+  assert.deepEqual(validateWidgetContent(widget.data.content), []);
+  assert.equal(widget.data.content.components[0].items[1].label, 'Leclerc');
+
+  // A restart without network: the cache, then the params Gladys keeps.
+  const again = createFakeGladys({
+    config: { stores: 'Bio = 24/7', discover_kinds: ['supermarket'] },
+    houses: HOUSES,
+    devices: [{ ...leclerc, name: 'Leclerc' }],
+  });
+  const down = fakeOverpass([]);
+  down.down = true;
+  createApp(again, {
+    timers: false,
+    now: fakeClock('2026-10-31T09:00:00Z'),
+    storage: memoryStorage(),
+    fetch: down,
+    hoursCache,
+  });
+  await again.connect();
+  assert.equal(again.fake.lastState(storeIds(again, 'osm-w101').feature('open')), 1);
+  const bare = createFakeGladys({
+    config: { stores: '', discover_kinds: [] },
+    houses: HOUSES,
+    devices: [{ ...leclerc, name: 'Leclerc' }],
+  });
+  const offline = fakeOverpass([]);
+  offline.down = true;
+  createApp(bare, {
+    timers: false,
+    now: fakeClock('2026-10-31T09:00:00Z'),
+    storage: memoryStorage(),
+    fetch: offline,
+    hoursCache: memoryCache(),
+  });
+  await bare.connect();
+  assert.equal(bare.fake.lastState(storeIds(bare, 'osm-w101').feature('open')), 1);
+
+  // Deleted: no longer a store.
+  await gladys.fake.deviceDeleted({ ...leclerc, name: 'Leclerc' });
+  const after = (await gladys.fake.action('test_configuration', {})).data.message.fr;
+  assert.ok(!after.includes('Leclerc :'), after);
 });
 
 test('scene action is_store_open, per store', async () => {

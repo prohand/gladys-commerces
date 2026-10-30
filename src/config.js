@@ -8,6 +8,8 @@
 // `undefined`, strings typed in a number field or values out of range.
 // -----------------------------------------------------------------------------
 
+import { SHOP_KINDS } from './shops/finder.js';
+
 /** The stores are in France: the hours are read on the French clock, holidays included. */
 export const TIME_ZONE = 'Europe/Paris';
 
@@ -16,8 +18,14 @@ export const DEFAULT_CONFIG = {
   stores: '',
   // Minutes before an opening or a closing that fire the "soon" triggers.
   notice_minutes: 30,
-  // How far from a house a store written `Name = auto` is looked for, in km.
+  // How far from a house a store without hours, or a shop to discover, is
+  // looked for on OpenStreetMap, in km.
   search_radius_km: 10,
+  // Selectors of the houses to search around. Empty: every located house.
+  search_houses: [],
+  // Kinds of shops offered per house in the Discovery tab (SHOP_KINDS keys).
+  // Empty: none, the Discovery tab only holds the stores typed.
+  discover_kinds: ['supermarket', 'bakery', 'pharmacy', 'post_office', 'recycling_centre'],
   // `Name=number; Name=number`, read by src/shops/cards.js. Empty: no card.
   loyalty_cards: '',
 };
@@ -39,8 +47,20 @@ export function normalizeConfig(raw = {}) {
     stores: text(raw.stores, DEFAULT_CONFIG.stores),
     notice_minutes: bounded(raw.notice_minutes, 'notice_minutes'),
     search_radius_km: bounded(raw.search_radius_km, 'search_radius_km'),
+    search_houses: list(raw.search_houses, DEFAULT_CONFIG.search_houses),
+    discover_kinds: list(raw.discover_kinds, DEFAULT_CONFIG.discover_kinds).filter(
+      (kind) => kind in SHOP_KINDS,
+    ),
     loyalty_cards: text(raw.loyalty_cards, DEFAULT_CONFIG.loyalty_cards),
   };
+}
+
+/**
+ * A multi_select field: an array of strings. Never saved: the default; saved
+ * empty: empty (the user unchecked everything).
+ */
+function list(value, fallback) {
+  return Array.isArray(value) ? value.filter((item) => typeof item === 'string') : fallback;
 }
 
 /** A number field, back to its default when empty or not a number, clamped. */

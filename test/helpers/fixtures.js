@@ -86,20 +86,47 @@ export const OSM_SHOPS = [
     id: 202,
     lat: 47.2231,
     lon: 2.0702,
-    tags: { name: 'Pharmacie du Marché', opening_hours: 'Mo-Fr 09:00-19:00' },
+    tags: { name: 'Pharmacie du Marché', amenity: 'pharmacy', opening_hours: 'Mo-Fr 09:00-19:00' },
   },
   {
     type: 'node',
     id: 203,
     lat: 47.0815,
     lon: 2.399,
-    tags: { name: 'Pharmacie Centrale', opening_hours: 'Mo-Sa 09:00-12:00,14:00-19:00' },
+    tags: {
+      name: 'Pharmacie Centrale',
+      amenity: 'pharmacy',
+      opening_hours: 'Mo-Sa 09:00-12:00,14:00-19:00',
+    },
   },
   {
     type: 'node',
     id: 304,
     lat: 47.082,
     lon: 2.4,
-    tags: { name: 'Boulangerie Dupont', opening_hours: 'Tu-Su 07:00-13:00; sunrise-sunset' },
+    tags: {
+      name: 'Boulangerie Dupont',
+      shop: 'bakery',
+      opening_hours: 'Tu-Su 07:00-13:00; sunrise-sunset',
+    },
+  },
+  {
+    type: 'way',
+    id: 405,
+    center: { lat: 47.2105, lon: 2.0811 },
+    tags: {
+      name: 'Déchetterie de Vierzon',
+      amenity: 'recycling',
+      recycling_type: 'centre',
+      opening_hours: 'Mo-Sa 09:00-12:00,14:00-18:00',
+    },
+  },
+  {
+    type: 'node',
+    id: 506,
+    lat: 47.0812,
+    lon: 2.3995,
+    // No name: never offered, a store needs one.
+    tags: { amenity: 'pharmacy', opening_hours: '24/7' },
   },
 ];

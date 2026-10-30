@@ -20,3 +20,13 @@ test('texts are trimmed', () => {
   assert.equal(config.stores, 'A = 24/7');
   assert.equal(config.loyalty_cards, 'A=12345678');
 });
+
+test('the lists of the houses and of the kinds: default when never saved, else as saved', () => {
+  assert.deepEqual(normalizeConfig().search_houses, []);
+  assert.deepEqual(normalizeConfig().discover_kinds, DEFAULT_CONFIG.discover_kinds);
+  assert.deepEqual(normalizeConfig({ discover_kinds: [] }).discover_kinds, []);
+  assert.deepEqual(normalizeConfig({ discover_kinds: ['bakery', 'nope', 3] }).discover_kinds, [
+    'bakery',
+  ]);
+  assert.deepEqual(normalizeConfig({ search_houses: ['maison'] }).search_houses, ['maison']);
+});
