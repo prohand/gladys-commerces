@@ -12,6 +12,8 @@ the version's GitHub Release.
 
 ### Added
 
+- A fallback OpenStreetMap server: when `overpass-api.de` does not answer (a
+  timeout, a 502), the same query goes to `overpass.kumi.systems`.
 - Opening hours of several shops in the OpenStreetMap syntax, with French public
   holidays: one device per shop (open, minutes until it opens or closes).
 - Opening hours found automatically: a shop written with no hours (`Name`, or

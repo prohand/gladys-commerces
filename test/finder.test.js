@@ -13,6 +13,8 @@ import {
   nameMatches,
   nearestShops,
   overpassQuery,
+  OVERPASS_FALLBACK_URL,
+  OVERPASS_URL,
   REFRESH_MS,
   RETRY_MS,
   searchKey,
@@ -173,13 +175,29 @@ test('asked during a lookup that fails: no second query at once', async () => {
     finder.refresh({ searches: ['leclerc'], radiusKm: 10 }),
     finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true }),
   ]);
-  assert.equal(fetch.queries.length, 1);
+  // One lookup: the main server, then the fallback.
+  assert.equal(fetch.queries.length, 2);
   assert.equal(finder.status.state, 'unreachable');
   // Asked again later, by the user: no wait.
   fetch.down = false;
   await finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true });
-  assert.equal(fetch.queries.length, 2);
+  assert.equal(fetch.queries.length, 3);
   assert.equal(finder.get('leclerc').name, 'E.Leclerc');
+});
+
+test('the main server fails: the same query on the fallback server', async () => {
+  const { finder, fetch } = finderSetup();
+  fetch.downUrls = [OVERPASS_URL];
+  assert.equal(await finder.refresh({ searches: ['leclerc'], radiusKm: 10 }), true);
+  assert.deepEqual(fetch.urls, [OVERPASS_URL, OVERPASS_FALLBACK_URL]);
+  assert.equal(fetch.queries[0], fetch.queries[1]);
+  assert.equal(finder.status.state, 'ok');
+  assert.equal(finder.get('leclerc').name, 'E.Leclerc');
+
+  // The main server back: the fallback is not asked.
+  fetch.downUrls = [];
+  await finder.refresh({ searches: ['leclerc', 'pharmacie'], radiusKm: 10 });
+  assert.deepEqual(fetch.urls.slice(2), [OVERPASS_URL]);
 });
 
 test('no located house, or no access to the houses: nothing is asked', async () => {

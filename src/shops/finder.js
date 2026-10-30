@@ -13,6 +13,8 @@
 //
 // This is the only network call of the integration: the Overpass API
 // receives the words looked for, the kinds, and an area around each house.
+// The main server is often busy (timeouts, 502): a second public server is
+// asked when it fails, the same query, so the data sent stays the same.
 // The results are kept in /data/hours.json, so a restart without network
 // keeps the hours, and refreshed once a day (the shops update their hours on
 // the map from time to time).
@@ -25,6 +27,8 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 const logger = createLogger({ name: 'finder' });
 
 export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+/** Asked when the main server fails. */
+export const OVERPASS_FALLBACK_URL = 'https://overpass.kumi.systems/api/interpreter';
 const USER_AGENT =
   'gladys-horaires-commerces (+https://github.com/prohand/gladys-horaires-commerces)';
 
@@ -520,8 +524,18 @@ export class HoursFinder {
     return JSON.stringify([this.results, this.nearby, this.shops]);
   }
 
+  /** The query on the main server, then on the fallback one if it fails. */
   async overpass(query) {
-    const response = await this.fetch(OVERPASS_URL, {
+    try {
+      return await this.ask(OVERPASS_URL, query);
+    } catch (err) {
+      logger.warn(`${new URL(OVERPASS_URL).host} failed (${err.message}), trying the fallback`);
+    }
+    return this.ask(OVERPASS_FALLBACK_URL, query);
+  }
+
+  async ask(url, query) {
+    const response = await this.fetch(url, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded',

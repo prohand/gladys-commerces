@@ -262,7 +262,8 @@ test('test_configuration says why the Discovery tab is empty, and tries again', 
     (await test())[1],
     'Onglet Découverte : 1 commerce(s) trouvé(s) autour de Campagne : créez ceux où vous allez.',
   );
-  assert.equal(fetch.queries.length, 2);
+  // Down: the main server and the fallback; back: the main server.
+  assert.equal(fetch.queries.length, 3);
   assert.ok(
     gladys.fake.discoveredDevices.some((device) => device.name.startsWith('Pharmacie du Marché')),
   );

@@ -58,7 +58,8 @@ house (`getHouses()`, manifest `location: true`), and keeps the nearest one. The
 results are cached in `/data/hours.json`. The same query also brings, per house,
 the nearest shops of the kinds checked in the configuration: they are offered in the
 Discovery tab (`store:osm-<id>` devices, the hours in their params), and the ones
-created are refreshed by id. It is the only network call.
+created are refreshed by id. It is the only network call: when `overpass-api.de`
+fails (a timeout, a 502), the same query goes to `overpass.kumi.systems`.
 
 **Loyalty cards.** Retailers offer no public API for their cards: reading a balance
 would take the customer's password and an unofficial interface, which this
