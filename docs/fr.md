@@ -21,7 +21,7 @@ l'écran **Configuration**.
 | Maisons autour desquelles chercher | Les maisons Gladys autour desquelles chercher. Aucune cochée : toutes celles qui ont un emplacement. |
 | Rayon de recherche ... (km)        | À quelle distance d'une maison les commerces sont cherchés. Par défaut : 10.                         |
 | Types de commerces ...             | Les types de commerces proposés dans l'onglet Découverte. Aucun coché : aucun.                       |
-| Clé overpass.ch                    | Facultatif : un serveur OpenStreetMap plus sûr (voir plus bas comment créer la clé).                 |
+| Clé overpass.ch                    | Votre clé gratuite, pour chercher les horaires sur OpenStreetMap (voir plus bas).                    |
 | Préavis avant ... (min)            | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.                     |
 | Numéros de carte                   | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                                  |
 
@@ -64,7 +64,8 @@ alors sur OpenStreetMap le commerce de ce nom le plus proche de vos maisons Glad
 (toutes les maisons dont l'emplacement est renseigné dans **Paramètres → Maisons**),
 et prend ses horaires. Pour chercher d'autres mots que le nom, écrivez-les après
 `auto:`, par exemple `Boulangerie = auto: Boulangerie Dupont`. Les accents et les
-majuscules ne comptent pas.
+majuscules ne comptent pas. Il faut pour cela une clé gratuite overpass.ch (voir
+**Clé overpass.ch** plus bas).
 
 - Avec plusieurs maisons, le commerce le plus proche de toutes les maisons gagne :
   donnez un nom précis (`auto: Carrefour Market Vierzon`) pour en choisir un près
@@ -91,14 +92,13 @@ allez, dans une pièce de la bonne maison, et renommez-les comme vous voulez : i
 marchent comme les commerces que vous écrivez, et leurs horaires sont mis à jour
 une fois par jour.
 
-### Clé overpass.ch (facultatif)
+### Clé overpass.ch
 
-Les horaires sont cherchés sur des serveurs OpenStreetMap publics et gratuits,
-souvent chargés : la recherche échoue alors (« OpenStreetMap n'a pas pu être joint »)
-et réessaie dans l'heure. Pour une recherche plus sûre, prenez une clé gratuite chez
-[overpass.ch](https://overpass.ch) : son serveur est interrogé en premier, les
-serveurs publics s'il échoue. La formule gratuite (sans carte bancaire, pour un usage
-personnel) donne 10 000 requêtes par mois ; l'intégration en fait une par jour.
+Les horaires sont cherchés sur OpenStreetMap par le service
+[overpass.ch](https://overpass.ch), avec votre propre clé gratuite : sans clé, rien
+n'est cherché (les commerces écrits avec leurs horaires marchent quand même). La
+formule gratuite (sans carte bancaire, pour un usage personnel) donne 10 000 requêtes
+par mois ; l'intégration en fait une par jour.
 
 1. Ouvrez [overpass.ch/signup](https://overpass.ch/signup) (bouton **Get a free key**
    sur l'accueil).
@@ -120,8 +120,9 @@ personnel) donne 10 000 requêtes par mois ; l'intégration en fait une par jour
    `OpenStreetMap answered by api.overpass.ch` quand la clé marche.
 
 La clé est personnelle : ne la publiez pas (forum, dépôt de code, capture d'écran).
-Une clé refusée (403, quota du mois épuisé) n'arrête rien : les serveurs publics
-prennent le relais, et les logs disent `api.overpass.ch failed (…)`.
+Une clé refusée ou un quota du mois épuisé est dit par **Tester la configuration** et
+dans les logs (`OpenStreetMap lookup failed: overpass.ch refused the key (403)`) ; les
+horaires déjà trouvés restent, et la recherche réessaie dans l'heure.
 
 ### Cartes de fidélité
 
@@ -187,9 +188,12 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 - **L'onglet Découverte est vide** : cliquez sur **Tester la configuration** : il
   cherche de nouveau sur OpenStreetMap et dit pourquoi (maison sans emplacement, aucun
   type coché, OpenStreetMap injoignable, aucun commerce de ces types dans le rayon).
-- **« OpenStreetMap n'a pas pu être joint »** : les serveurs publics gratuits sont
-  souvent chargés. Mettez une clé gratuite overpass.ch (voir **Clé overpass.ch**
-  plus haut).
+- **« Clé overpass.ch manquante »** : collez votre clé dans la configuration (voir
+  **Clé overpass.ch** plus haut).
+- **« OpenStreetMap n'a pas pu être joint »** : le message dit pourquoi (clé refusée,
+  quota épuisé, serveur injoignable). Vérifiez la clé sur
+  [overpass.ch/dashboard/keys](https://overpass.ch/dashboard/keys) ; nouvel essai dans
+  l'heure.
 - **« Aucun commerce de ce nom ... sur OpenStreetMap »** : essayez moins de mots, un
   **Rayon de recherche** plus grand, ou écrivez les horaires à la main.
 - **« Aucune maison de Gladys n'a d'emplacement »** : renseignez l'emplacement de la
@@ -212,8 +216,6 @@ comme états Gladys ; elles ne sortent jamais de votre Gladys.
 Pour trouver les horaires (commerces écrits sans horaires, et onglet Découverte), les
 mots cherchés, les types de commerces et l'emplacement de vos maisons (une zone du
 rayon de recherche autour de chacune) sont envoyés à l'API Overpass d'OpenStreetMap
-(d'abord à `api.overpass.ch` si vous avez mis une clé, en Allemagne ; puis
-`overpass-api.de` ; s'il ne répond pas, `overpass.private.coffee`, puis `maps.mail.ru`
-tenu par VK), une fois par jour. Les horaires trouvés sont gardés dans
-`/data/hours.json`. Pour ne rien envoyer : écrivez les horaires de tous les commerces
-et décochez tous les types de commerces.
+d'overpass.ch (`api.overpass.ch`, en Allemagne), avec votre clé, une fois par jour. Les horaires trouvés sont gardés dans
+`/data/hours.json`. Pour ne rien envoyer : ne mettez pas de clé, et écrivez les horaires
+de tous les commerces.

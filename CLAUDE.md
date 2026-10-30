@@ -79,11 +79,10 @@ src/capabilities/       actions, scenes, widgets
 - **No event as a consequence of a scene action** (loop rule of the SDK).
 - `poll_frequency` is not used: the integration runs its own one-minute timer.
 - **The only network call is the OpenStreetMap lookup** (one Overpass query, once a
-  day, sent to each of `OVERPASS_URLS` in turn until one answers, after
-  `api.overpass.ch` when the `overpass_ch_key` secret is set; never a regional
-  server, its empty answer would be kept a day; only hosts are logged, the key is
-  in the URL): shops without hours, kinds to discover, created shops by id. None of the three:
-  no call, no `getHouses()`. User words reach the query only as letters and digits
+  day, to `api.overpass.ch` only, with the user's free key from the `overpass_ch_key`
+  secret; never log the URL, it holds the key): shops without hours, kinds to
+  discover, created shops by id. None of the three, or no key: no call, no
+  `getHouses()` (no key: the stores show `no_key`). User words reach the query only as letters and digits
   (`searchPattern`). A created shop keeps its hours in its device params too
   (`OSM_OPENING_HOURS`), for a start without cache nor network.
 - The rootfs is read-only: write only under `/data`. Tests never touch the disk outside a

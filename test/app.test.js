@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 import { validateWidgetContent, validateWidgetImage } from '@gladysassistant/integration-sdk';
 import { createApp } from '../src/app.js';
-import { OVERPASS_URLS, overpassChUrl } from '../src/shops/finder.js';
+import { overpassChUrl } from '../src/shops/finder.js';
 import { cardIds, storeIds } from '../src/devices/index.js';
 import {
   fakeClock,
@@ -20,11 +20,15 @@ import {
 } from './helpers/fixtures.js';
 
 const CARDS = `Marie=${MARIE}; Paul=${PAUL}`;
+const KEY = 'Ab12cd34';
 const STORES = 'Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00';
 
 // No discovery unless a test asks for it: the lists stay the typed ones.
 async function setup({ config = { stores: STORES, loyalty_cards: CARDS }, balances = {} } = {}) {
-  const gladys = createFakeGladys({ config: { discover_kinds: [], ...config }, houses: HOUSES });
+  const gladys = createFakeGladys({
+    config: { discover_kinds: [], overpass_ch_key: KEY, ...config },
+    houses: HOUSES,
+  });
   const clock = fakeClock('2026-10-30T18:00:00Z'); // Friday 19:00 in Paris
   const storage = memoryStorage(balances);
   const fetch = fakeOverpass(OSM_SHOPS);
@@ -49,9 +53,16 @@ test('on connection: one device per store and per card, with their states', asyn
   assert.equal(gladys.fake.connectionStatus.connected, true);
 });
 
-test('the overpass.ch key of the configuration is the first server asked', async () => {
-  const { fetch } = await setup({ config: { stores: 'Leclerc', overpass_ch_key: 'Ab12cd34' } });
-  assert.deepEqual(fetch.urls, [overpassChUrl('Ab12cd34')]);
+test('the overpass.ch key of the configuration is the server asked', async () => {
+  const { fetch } = await setup({ config: { stores: 'Leclerc' } });
+  assert.deepEqual(fetch.urls, [overpassChUrl(KEY)]);
+});
+
+test('no overpass.ch key: no call, the store and the test say why', async () => {
+  const { gladys, fetch } = await setup({ config: { stores: 'Leclerc', overpass_ch_key: '' } });
+  assert.equal(fetch.queries.length, 0);
+  const message = (await gladys.fake.action('test_configuration', {})).data.message.fr;
+  assert.match(message, /clé gratuite overpass\.ch/);
 });
 
 test('scan request publishes the devices again', async () => {
@@ -198,7 +209,7 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
 
   // A restart without network: the cache, then the params Gladys keeps.
   const again = createFakeGladys({
-    config: { stores: 'Bio = 24/7', discover_kinds: ['supermarket'] },
+    config: { stores: 'Bio = 24/7', discover_kinds: ['supermarket'], overpass_ch_key: KEY },
     houses: HOUSES,
     devices: [{ ...leclerc, name: 'Leclerc' }],
   });
@@ -214,7 +225,7 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
   await again.connect();
   assert.equal(again.fake.lastState(storeIds(again, 'osm-w101').feature('open')), 1);
   const bare = createFakeGladys({
-    config: { stores: '', discover_kinds: [] },
+    config: { stores: '', discover_kinds: [], overpass_ch_key: KEY },
     houses: HOUSES,
     devices: [{ ...leclerc, name: 'Leclerc' }],
   });
@@ -238,7 +249,12 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
 
 test('test_configuration says why the Discovery tab is empty, and tries again', async () => {
   const gladys = createFakeGladys({
-    config: { stores: '', discover_kinds: ['pharmacy'], search_houses: ['campagne'] },
+    config: {
+      stores: '',
+      discover_kinds: ['pharmacy'],
+      search_houses: ['campagne'],
+      overpass_ch_key: KEY,
+    },
     houses: [{ ...HOUSES[1], latitude: null, longitude: null }],
   });
   const fetch = fakeOverpass(OSM_SHOPS);
@@ -268,8 +284,7 @@ test('test_configuration says why the Discovery tab is empty, and tries again', 
     (await test())[1],
     'Onglet Découverte : 1 commerce(s) trouvé(s) autour de Campagne : créez ceux où vous allez.',
   );
-  // Down: every server; back: the main server.
-  assert.equal(fetch.queries.length, OVERPASS_URLS.length + 1);
+  assert.equal(fetch.queries.length, 2);
   assert.ok(
     gladys.fake.discoveredDevices.some((device) => device.name.startsWith('Pharmacie du Marché')),
   );

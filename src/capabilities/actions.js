@@ -111,6 +111,13 @@ export function describeDiscovery(finder, config) {
         });
       }
       switch (state) {
+        case 'no_key':
+          return pick(language, {
+            en: 'no overpass.ch key: paste your free key in the configuration (steps in the documentation).',
+            fr: 'pas de clé overpass.ch : collez votre clé gratuite dans la configuration (étapes dans la documentation).',
+            de: 'kein overpass.ch-Schlüssel: Fügen Sie Ihren kostenlosen Schlüssel in die Konfiguration ein (Schritte in der Dokumentation).',
+            es: 'sin clave de overpass.ch: pegue su clave gratuita en la configuración (pasos en la documentación).',
+          });
         case 'no_house':
           return pick(language, {
             en: 'no house searched has a location: set it in Settings → Houses.',

@@ -37,14 +37,13 @@ export function fakeOverpass(elements = []) {
   const fetch = async (url, options) => {
     fetch.urls.push(url);
     fetch.queries.push(new URLSearchParams(options.body).get('data'));
-    if (fetch.down || fetch.downUrls.includes(url)) {
+    if (fetch.down) {
       throw new Error('network down');
     }
     return { ok: true, status: 200, json: async () => ({ elements: fetch.elements }) };
   };
   fetch.queries = [];
   fetch.urls = [];
-  fetch.downUrls = [];
   fetch.elements = elements;
   fetch.down = false;
   return fetch;

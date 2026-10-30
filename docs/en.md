@@ -20,7 +20,7 @@ Open **Integrations**, find the integration, install it, then fill in the
 | Houses to search around | The Gladys houses to search around. None checked: every house with a location. |
 | Search radius ... (km)  | How far from a house the shops are looked for. Default: 10.                    |
 | Kinds of shops ...      | The kinds of shops offered in the Discovery tab. None checked: none.           |
-| overpass.ch key         | Optional: a steadier OpenStreetMap server (see below how to get the key).      |
+| overpass.ch key         | Your free key, to look up the hours on OpenStreetMap (see below).              |
 | Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.      |
 | Card numbers            | Your loyalty cards (see below). Leave empty if you have none.                  |
 
@@ -61,7 +61,8 @@ Write only the name: `Leclerc` (or `Leclerc = auto`). The integration then looks
 OpenStreetMap for the shop of that name nearest to your Gladys houses (all the
 houses with a location, set in **Settings → Houses**), and takes its hours. To look
 for other words than the name, write them after `auto:`, for example
-`Bakery = auto: Boulangerie Dupont`. Accents and case do not matter.
+`Bakery = auto: Boulangerie Dupont`. Accents and case do not matter. This needs a free overpass.ch key (see
+**overpass.ch key** below).
 
 - With several houses, the nearest shop of all houses wins: give a precise name
   (`auto: Carrefour Market Vierzon`) to pick one near a given house.
@@ -84,14 +85,12 @@ and its distance, for example `E.Leclerc (Home, 1.3 km)`. Create the ones you go
 in a room of the right house, and rename them as you like: they work like the shops
 you type, and their hours are kept up to date once a day.
 
-### overpass.ch key (optional)
+### overpass.ch key
 
-The hours are looked up on free public OpenStreetMap servers, often busy: the
-lookup then fails ("OpenStreetMap could not be reached") and tries again within the
-hour. For a steadier lookup, get a free key from [overpass.ch](https://overpass.ch):
-its server is asked first, the public ones if it fails. The free plan (no credit
-card, for personal use) gives 10,000 requests a month; the integration makes one a
-day.
+The hours are looked up on OpenStreetMap through the [overpass.ch](https://overpass.ch)
+service, with your own free key: without a key, nothing is looked up (the shops
+typed with their hours work all the same). The free plan (no credit card, for
+personal use) gives 10,000 requests a month; the integration makes one a day.
 
 1. Open [overpass.ch/signup](https://overpass.ch/signup) (**Get a free key** button on
    the home page).
@@ -111,8 +110,9 @@ day.
    `OpenStreetMap answered by api.overpass.ch` when the key works.
 
 The key is personal: do not publish it (forum, code repository, screenshot). A key
-refused (403, monthly quota used up) stops nothing: the public servers take over,
-and the logs say `api.overpass.ch failed (…)`.
+refused or a monthly quota used up is told by **Test the configuration** and in the
+logs (`OpenStreetMap lookup failed: overpass.ch refused the key (403)`); the hours
+found before stay, and the lookup tries again within the hour.
 
 ### Loyalty cards
 
@@ -174,8 +174,12 @@ a Code 128 otherwise. Both are read by till scanners.
 - **The Discovery tab is empty**: click **Test the configuration**: it looks again
   on OpenStreetMap and says why (house without a location, no kind checked,
   OpenStreetMap unreachable, no shop of these kinds within the radius).
-- **"OpenStreetMap could not be reached"**: the free public servers are often busy.
-  Set a free overpass.ch key (see **overpass.ch key** above).
+- **"overpass.ch key missing"**: paste your key in the configuration (see
+  **overpass.ch key** above).
+- **"OpenStreetMap could not be reached"**: the message says why (key refused, quota
+  used up, server unreachable). Check the key on
+  [overpass.ch/dashboard/keys](https://overpass.ch/dashboard/keys); new try within the
+  hour.
 - **"No shop of this name ... on OpenStreetMap"**: try fewer words, a wider
   **Search radius**, or type the hours by hand.
 - **"No house of Gladys has a location"**: set the house location in **Settings →
@@ -196,7 +200,6 @@ as Gladys states; they never leave your Gladys.
 
 To find the hours (shops written without hours, and the Discovery tab), the words
 looked for, the kinds of shops and the location of your houses (an area of the
-search radius around each) are sent to the OpenStreetMap Overpass API (first to
-`api.overpass.ch` if you gave a key, in Germany; then `overpass-api.de`; when it does not answer, `overpass.private.coffee`, then
-`maps.mail.ru` run by VK), once a day. The hours found are kept in `/data/hours.json`. To
-send nothing: type the hours of every shop and uncheck every kind of shop.
+search radius around each) are sent to the OpenStreetMap Overpass API
+of overpass.ch (`api.overpass.ch`, in Germany), with your key, once a day. The hours found are kept in `/data/hours.json`. To
+send nothing: set no key, and type the hours of every shop.

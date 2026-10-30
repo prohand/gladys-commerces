@@ -305,10 +305,10 @@
         "es": "Servidor de OpenStreetMap"
       },
       "description": {
-        "en": "The hours are looked up on free public OpenStreetMap servers, often busy. For a steadier lookup, create a free account on overpass.ch (no credit card) and paste its key below (steps in the Documentation): that server is asked first, the public ones if it fails. It receives the same data: the words looked for, the kinds of shops and an area around each house.",
-        "fr": "Les horaires sont cherchés sur des serveurs OpenStreetMap publics et gratuits, souvent chargés. Pour une recherche plus sûre, créez un compte gratuit sur overpass.ch (sans carte bancaire) et collez sa clé ci-dessous (étapes dans la Documentation) : ce serveur est interrogé en premier, les publics s'il échoue. Il reçoit les mêmes données : les mots cherchés, les types de commerces et une zone autour de chaque maison.",
-        "de": "Die Zeiten werden auf kostenlosen öffentlichen OpenStreetMap-Servern gesucht, die oft ausgelastet sind. Für eine zuverlässigere Suche legen Sie ein kostenloses Konto auf overpass.ch an (ohne Kreditkarte) und fügen Sie den Schlüssel unten ein (Schritte in der Dokumentation): Dieser Server wird zuerst gefragt, die öffentlichen, wenn er scheitert. Er erhält dieselben Daten: die gesuchten Wörter, die Arten von Geschäften und einen Bereich um jedes Haus.",
-        "es": "El horario se busca en servidores públicos y gratuitos de OpenStreetMap, a menudo saturados. Para una búsqueda más fiable, cree una cuenta gratuita en overpass.ch (sin tarjeta) y pegue su clave abajo (pasos en la Documentación): ese servidor se consulta primero, los públicos si falla. Recibe los mismos datos: las palabras buscadas, los tipos de comercios y una zona alrededor de cada casa."
+        "en": "The hours are looked up on OpenStreetMap through overpass.ch, with your own free key: create a free account on overpass.ch (no credit card) and paste its key below (steps in the Documentation). Without a key, nothing is looked up: type the hours of your shops. overpass.ch receives the words looked for, the kinds of shops and an area around each house.",
+        "fr": "Les horaires sont cherchés sur OpenStreetMap par overpass.ch, avec votre propre clé gratuite : créez un compte gratuit sur overpass.ch (sans carte bancaire) et collez sa clé ci-dessous (étapes dans la Documentation). Sans clé, rien n'est cherché : écrivez les horaires de vos commerces. overpass.ch reçoit les mots cherchés, les types de commerces et une zone autour de chaque maison.",
+        "de": "Die Zeiten werden auf OpenStreetMap über overpass.ch gesucht, mit Ihrem eigenen kostenlosen Schlüssel: Legen Sie ein kostenloses Konto auf overpass.ch an (ohne Kreditkarte) und fügen Sie den Schlüssel unten ein (Schritte in der Dokumentation). Ohne Schlüssel wird nichts gesucht: Geben Sie die Zeiten Ihrer Geschäfte ein. overpass.ch erhält die gesuchten Wörter, die Arten von Geschäften und einen Bereich um jedes Haus.",
+        "es": "El horario se busca en OpenStreetMap a través de overpass.ch, con su propia clave gratuita: cree una cuenta gratuita en overpass.ch (sin tarjeta) y pegue su clave abajo (pasos en la Documentación). Sin clave, no se busca nada: escriba el horario de sus comercios. overpass.ch recibe las palabras buscadas, los tipos de comercios y una zona alrededor de cada casa."
       },
       "links": [
         {
@@ -335,10 +335,10 @@
       "key": "overpass_ch_key",
       "type": "secret",
       "label": {
-        "en": "overpass.ch key (optional)",
-        "fr": "Clé overpass.ch (facultatif)",
-        "de": "overpass.ch-Schlüssel (optional)",
-        "es": "Clave de overpass.ch (opcional)"
+        "en": "overpass.ch key",
+        "fr": "Clé overpass.ch",
+        "de": "overpass.ch-Schlüssel",
+        "es": "Clave de overpass.ch"
       },
       "required": false
     },
