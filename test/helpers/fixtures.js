@@ -35,13 +35,16 @@ export const PAUL = '123456789012345';
 /** A fetch answering like Overpass, with the queries it received. */
 export function fakeOverpass(elements = []) {
   const fetch = async (url, options) => {
+    fetch.urls.push(url);
     fetch.queries.push(new URLSearchParams(options.body).get('data'));
-    if (fetch.down) {
+    if (fetch.down || fetch.downUrls.includes(url)) {
       throw new Error('network down');
     }
     return { ok: true, status: 200, json: async () => ({ elements: fetch.elements }) };
   };
   fetch.queries = [];
+  fetch.urls = [];
+  fetch.downUrls = [];
   fetch.elements = elements;
   fetch.down = false;
   return fetch;

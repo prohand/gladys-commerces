@@ -13,6 +13,8 @@
 //
 // This is the only network call of the integration: the Overpass API
 // receives the words looked for, the kinds, and an area around each house.
+// The main server is often busy (timeouts, 502): a second public server is
+// asked when it fails, the same query, so the data sent stays the same.
 // The results are kept in /data/hours.json, so a restart without network
 // keeps the hours, and refreshed once a day (the shops update their hours on
 // the map from time to time).
@@ -25,6 +27,8 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 const logger = createLogger({ name: 'finder' });
 
 export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
+/** Asked when the main server fails. */
+export const OVERPASS_FALLBACK_URL = 'https://overpass.kumi.systems/api/interpreter';
 const USER_AGENT =
   'gladys-horaires-commerces (+https://github.com/prohand/gladys-horaires-commerces)';
 
@@ -338,6 +342,8 @@ export class HoursFinder {
     this.signature = null;
     this.checkedAt = 0;
     this.failedAt = 0;
+    // Lookups that went on the network, to know whether one ran meanwhile.
+    this.tries = 0;
     this.loaded = false;
     // How the last lookup went, for the test action: `idle` (never asked),
     // `ok`, `no_house`, `no_access` or `unreachable` (with `message`).
@@ -365,12 +371,14 @@ export class HoursFinder {
    * @param {string[]} [request.kinds] the kinds to discover (SHOP_KINDS keys)
    * @param {string[]} [request.houses] the selectors of the houses (empty: all)
    * @param {string[]} [request.known] the keys of the shops created
-   * @param {boolean} [request.force] asked by the user: no wait after a failure
+   * @param {boolean} [request.force] asked by the user: no wait after a
+   *   failure, unless the lookup it waited for just failed
    * @returns {Promise<boolean>} whether the results changed
    */
   refresh(request) {
     // One lookup at a time: a new configuration saved during a lookup waits.
     const previous = this.running ?? Promise.resolve();
+    const tries = this.tries;
     const running = previous
       .catch(() => {})
       .then(() =>
@@ -380,7 +388,9 @@ export class HoursFinder {
           kinds: unique(request.kinds).filter((kind) => kind in SHOP_KINDS),
           houses: unique(request.houses),
           known: unique(request.known).filter((key) => KEY.test(key)),
-          force: Boolean(request.force),
+          // Asked during a lookup that failed: that lookup was the try, a
+          // second query at once would only load a busy server again.
+          force: Boolean(request.force) && (this.tries === tries || this.failedAt === 0),
         }),
       )
       .finally(() => {
@@ -452,6 +462,7 @@ export class HoursFinder {
     }
 
     let elements;
+    this.tries += 1;
     try {
       elements = await this.overpass(
         overpassQuery({ searches, kinds, known, houses, radiusMeters: radius }),
@@ -513,8 +524,18 @@ export class HoursFinder {
     return JSON.stringify([this.results, this.nearby, this.shops]);
   }
 
+  /** The query on the main server, then on the fallback one if it fails. */
   async overpass(query) {
-    const response = await this.fetch(OVERPASS_URL, {
+    try {
+      return await this.ask(OVERPASS_URL, query);
+    } catch (err) {
+      logger.warn(`${new URL(OVERPASS_URL).host} failed (${err.message}), trying the fallback`);
+    }
+    return this.ask(OVERPASS_FALLBACK_URL, query);
+  }
+
+  async ask(url, query) {
+    const response = await this.fetch(url, {
       method: 'POST',
       headers: {
         'content-type': 'application/x-www-form-urlencoded',

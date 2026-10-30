@@ -170,6 +170,7 @@ estados de Gladys; nunca salen de su Gladys.
 Para encontrar el horario (comercios escritos sin horario, y pestaña Descubrimiento),
 las palabras buscadas, los tipos de comercios y la ubicación de sus casas (una zona
 del radio de búsqueda alrededor de cada una) se envían a la API Overpass de
-OpenStreetMap (`overpass-api.de`), una vez al día. El horario encontrado se guarda en
+OpenStreetMap (`overpass-api.de`, o `overpass.kumi.systems` cuando el primero no
+responde), una vez al día. El horario encontrado se guarda en
 `/data/hours.json`. Para no enviar nada: escriba el horario de todos los comercios y
 desmarque todos los tipos de comercios.

@@ -164,5 +164,6 @@ as Gladys states; they never leave your Gladys.
 To find the hours (shops written without hours, and the Discovery tab), the words
 looked for, the kinds of shops and the location of your houses (an area of the
 search radius around each) are sent to the OpenStreetMap Overpass API
-(`overpass-api.de`), once a day. The hours found are kept in `/data/hours.json`. To
+(`overpass-api.de`, or `overpass.kumi.systems` when the first one does not
+answer), once a day. The hours found are kept in `/data/hours.json`. To
 send nothing: type the hours of every shop and uncheck every kind of shop.
