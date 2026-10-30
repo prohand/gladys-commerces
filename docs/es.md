@@ -1,4 +1,4 @@
-# Comercios — guía de uso
+# Horaires Commerces — guía de uso
 
 Esta integración trae a Gladys dos cosas de los comercios a los que va:
 
@@ -21,6 +21,7 @@ Abra **Integraciones**, busque la integración, instálela y rellene la pantalla
 | Casas alrededor de las que buscar | Las casas de Gladys alrededor de las que buscar. Ninguna marcada: todas las que tienen ubicación. |
 | Radio de búsqueda ... (km)        | A qué distancia de una casa se buscan los comercios. Por defecto: 10.                             |
 | Tipos de comercios ...            | Los tipos de comercios propuestos en la pestaña Descubrimiento. Ninguno marcado: ninguno.         |
+| Clave de overpass.ch              | Opcional: un servidor de OpenStreetMap más fiable (ver abajo cómo crear la clave).                |
 | Aviso antes de ... (min)          | Cuándo se activan «abre pronto» / «cierra pronto». Por defecto: 30 min.                           |
 | Números de tarjeta                | Sus tarjetas de fidelidad (ver abajo). Vacío si no tiene ninguna.                                 |
 
@@ -86,6 +87,37 @@ casa y su distancia, por ejemplo `E.Leclerc (Casa, 1.3 km)`. Cree aquellos a los
 va, en una habitación de la casa correcta, y cámbieles el nombre como quiera:
 funcionan como los comercios que escribe, y su horario se actualiza una vez al día.
 
+### Clave de overpass.ch (opcional)
+
+El horario se busca en servidores públicos y gratuitos de OpenStreetMap, a menudo
+saturados: la búsqueda falla entonces («No se pudo contactar con OpenStreetMap») y
+vuelve a intentarlo en la próxima hora. Para una búsqueda más fiable, consiga una
+clave gratuita en [overpass.ch](https://overpass.ch): su servidor se consulta primero,
+los públicos si falla. El plan gratuito (sin tarjeta, para uso personal) da 10 000
+peticiones al mes; la integración hace una al día.
+
+1. Abra [overpass.ch/signup](https://overpass.ch/signup) (botón **Get a free key** en
+   la página de inicio).
+2. Rellene **E-mail**, **Password** (10 caracteres como mínimo) y **Website** (por
+   ejemplo `https://github.com/prohand/gladys-horaires-commerces`), acepte las
+   condiciones y pulse **Create account** (o **Continue with Google**).
+3. Abra el correo recibido y pulse el enlace de confirmación.
+4. Inicie sesión (**Log in**) y abra la página de claves:
+   [overpass.ch/dashboard/keys](https://overpass.ch/dashboard/keys). Cree una clave.
+   **No rellene «Allowed referers» ni marque «Reject requests without a referer»**: la
+   integración no envía referer, el servidor rechazaría sus peticiones (error 403
+   `forbidden_referer`).
+5. Copie la clave. Su dirección completa, `https://api.overpass.ch/v1/…/interpreter`,
+   también sirve.
+6. En Gladys: **Integraciones** → **Horaires Commerces** → **Configuración**, péguela en
+   **Clave de overpass.ch** y guarde.
+7. Pulse **Probar la configuración**. Los logs de la integración dicen
+   `OpenStreetMap answered by api.overpass.ch` cuando la clave funciona.
+
+La clave es personal: no la publique (foro, repositorio de código, captura de
+pantalla). Una clave rechazada (403, cuota del mes agotada) no detiene nada: los
+servidores públicos toman el relevo, y los logs dicen `api.overpass.ch failed (…)`.
+
 ### Tarjetas de fidelidad
 
 Una tarjeta por entrada: un nombre (marca, titular), `=`, y el número impreso bajo el
@@ -150,6 +182,9 @@ control válido), y un Code 128 si no. Los escáneres de caja leen ambos.
 - **La pestaña Descubrimiento está vacía**: pulse **Probar la configuración**: busca
   de nuevo en OpenStreetMap y dice por qué (casa sin ubicación, ningún tipo marcado,
   OpenStreetMap inaccesible, ningún comercio de esos tipos en el radio).
+- **«No se pudo contactar con OpenStreetMap»**: los servidores públicos gratuitos
+  suelen estar saturados. Ponga una clave gratuita de overpass.ch (ver **Clave de
+  overpass.ch** más arriba).
 - **«Ningún comercio con este nombre ... en OpenStreetMap»**: pruebe con menos
   palabras, un **Radio de búsqueda** mayor, o escriba el horario a mano.
 - **«Ninguna casa de Gladys tiene ubicación»**: indique la ubicación de la casa en
@@ -170,7 +205,8 @@ estados de Gladys; nunca salen de su Gladys.
 Para encontrar el horario (comercios escritos sin horario, y pestaña Descubrimiento),
 las palabras buscadas, los tipos de comercios y la ubicación de sus casas (una zona
 del radio de búsqueda alrededor de cada una) se envían a la API Overpass de
-OpenStreetMap (`overpass-api.de`, o `overpass.kumi.systems` cuando el primero no
-responde), una vez al día. El horario encontrado se guarda en
+OpenStreetMap (primero a `api.overpass.ch` si ha puesto una clave, en Alemania; luego
+`overpass-api.de`; si no responde, `overpass.private.coffee`, y luego
+`maps.mail.ru`, de VK), una vez al día. El horario encontrado se guarda en
 `/data/hours.json`. Para no enviar nada: escriba el horario de todos los comercios y
 desmarque todos los tipos de comercios.

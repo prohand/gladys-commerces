@@ -8,7 +8,7 @@
 // `undefined`, strings typed in a number field or values out of range.
 // -----------------------------------------------------------------------------
 
-import { SHOP_KINDS } from './shops/finder.js';
+import { overpassKey, SHOP_KINDS } from './shops/finder.js';
 
 /** The stores are in France: the hours are read on the French clock, holidays included. */
 export const TIME_ZONE = 'Europe/Paris';
@@ -26,6 +26,9 @@ export const DEFAULT_CONFIG = {
   // Kinds of shops offered per house in the Discovery tab (SHOP_KINDS keys).
   // Empty: none, the Discovery tab only holds the stores typed.
   discover_kinds: ['supermarket', 'bakery', 'pharmacy', 'post_office', 'recycling_centre'],
+  // A personal overpass.ch key (a `secret` field): its server is asked before
+  // the public ones. Empty: the public ones only.
+  overpass_ch_key: '',
   // `Name=number; Name=number`, read by src/shops/cards.js. Empty: no card.
   loyalty_cards: '',
 };
@@ -51,6 +54,7 @@ export function normalizeConfig(raw = {}) {
     discover_kinds: list(raw.discover_kinds, DEFAULT_CONFIG.discover_kinds).filter(
       (kind) => kind in SHOP_KINDS,
     ),
+    overpass_ch_key: overpassKey(raw.overpass_ch_key),
     loyalty_cards: text(raw.loyalty_cards, DEFAULT_CONFIG.loyalty_cards),
   };
 }

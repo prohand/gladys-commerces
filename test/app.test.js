@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 import { validateWidgetContent, validateWidgetImage } from '@gladysassistant/integration-sdk';
 import { createApp } from '../src/app.js';
+import { OVERPASS_URLS, overpassChUrl } from '../src/shops/finder.js';
 import { cardIds, storeIds } from '../src/devices/index.js';
 import {
   fakeClock,
@@ -46,6 +47,11 @@ test('on connection: one device per store and per card, with their states', asyn
   assert.equal(gladys.fake.lastState(storeIds(gladys, 'pharmacie').feature('open')), 0);
   assert.equal(gladys.fake.lastState(cardIds(gladys, MARIE).feature('balance')), 7.5);
   assert.equal(gladys.fake.connectionStatus.connected, true);
+});
+
+test('the overpass.ch key of the configuration is the first server asked', async () => {
+  const { fetch } = await setup({ config: { stores: 'Leclerc', overpass_ch_key: 'Ab12cd34' } });
+  assert.deepEqual(fetch.urls, [overpassChUrl('Ab12cd34')]);
 });
 
 test('scan request publishes the devices again', async () => {
@@ -262,8 +268,8 @@ test('test_configuration says why the Discovery tab is empty, and tries again', 
     (await test())[1],
     'Onglet Découverte : 1 commerce(s) trouvé(s) autour de Campagne : créez ceux où vous allez.',
   );
-  // Down: the main server and the fallback; back: the main server.
-  assert.equal(fetch.queries.length, 3);
+  // Down: every server; back: the main server.
+  assert.equal(fetch.queries.length, OVERPASS_URLS.length + 1);
   assert.ok(
     gladys.fake.discoveredDevices.some((device) => device.name.startsWith('Pharmacie du Marché')),
   );

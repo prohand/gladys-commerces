@@ -62,6 +62,7 @@ export function createApp(gladys, deps = {}) {
         kinds: config.discover_kinds,
         houses: config.search_houses,
         known: watcher.known,
+        overpassKey: config.overpass_ch_key,
       });
       if (!changed) {
         return;

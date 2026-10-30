@@ -15,6 +15,16 @@ test('the notice typed as text is read, clamped to the manifest bounds', () => {
   assert.equal(normalizeConfig({ notice_minutes: '' }).notice_minutes, 30);
 });
 
+test('the overpass.ch key: the key alone, from the URL pasted, empty when not one', () => {
+  assert.equal(normalizeConfig({ overpass_ch_key: ' Ab12cd34 ' }).overpass_ch_key, 'Ab12cd34');
+  assert.equal(
+    normalizeConfig({ overpass_ch_key: 'https://api.overpass.ch/v1/Ab12cd34/interpreter' })
+      .overpass_ch_key,
+    'Ab12cd34',
+  );
+  assert.equal(normalizeConfig({ overpass_ch_key: 'a key' }).overpass_ch_key, '');
+});
+
 test('texts are trimmed', () => {
   const config = normalizeConfig({ stores: ' A = 24/7 ', loyalty_cards: ' A=12345678 ' });
   assert.equal(config.stores, 'A = 24/7');
