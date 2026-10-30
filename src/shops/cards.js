@@ -1,11 +1,11 @@
 // -----------------------------------------------------------------------------
-// Loyalty cards (Carte E.Leclerc).
+// Loyalty cards, of any brand.
 //
-// E.Leclerc offers no public API for its cards: the balance of the "Ticket
-// E.Leclerc" kitty cannot be read automatically without the customer's
-// password and an unofficial, unstable interface — which this integration
-// refuses to depend on. What it does instead:
-//   - the user types the card numbers (one per member of the household);
+// Retailers offer no public API for their cards: a balance cannot be read
+// automatically without the customer's password and an unofficial, unstable
+// interface — which this integration refuses to depend on. What it does
+// instead, like a card wallet app:
+//   - the user types the card numbers, each with a name (brand, holder);
 //   - the dashboard shows each card's barcode, to scan at the till;
 //   - the user updates the balance from the widget or a scene; it is kept in
 //     /data and published as a Gladys feature, usable in any condition.
@@ -18,11 +18,11 @@ import { FEATURES, MAX_BALANCE, cardIds } from '../devices/index.js';
 
 const logger = createLogger({ name: 'cards' });
 
-/** At most this many cards: a household, not a customer file. */
-export const MAX_CARDS = 10;
+/** At most this many cards: a household's wallet, not a customer file. */
+export const MAX_CARDS = 20;
 
 /**
- * Read the cards of the configuration: `Marie=2900123456785; Paul=2900...`.
+ * Read the cards of the configuration: `Leclerc Marie=2900123456785; Pharmacy=...`.
  * Entries are separated by `;`, `,` or a line break; the name before `=` or
  * `:` is optional. Spaces inside a number are ignored.
  * @param {string} text
@@ -44,7 +44,7 @@ export function parseCards(text) {
     if (cards.some((card) => card.number === number)) {
       continue;
     }
-    cards.push({ number, name: match[1]?.trim() || `•••• ${number.slice(-4)}` });
+    cards.push({ number, name: match[1]?.trim() || `Card •••• ${number.slice(-4)}` });
   }
   if (cards.length > MAX_CARDS) {
     errors.push(...cards.splice(MAX_CARDS).map((card) => card.number));

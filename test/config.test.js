@@ -4,7 +4,7 @@ import { DEFAULT_CONFIG, normalizeConfig } from '../src/config.js';
 
 test('an empty configuration is the defaults', () => {
   assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
-  assert.deepEqual(normalizeConfig({ store_name: '  ', opening_hours: '' }), DEFAULT_CONFIG);
+  assert.deepEqual(normalizeConfig({ stores: '  ', loyalty_cards: '' }), DEFAULT_CONFIG);
 });
 
 test('the notice typed as text is read, clamped to the manifest bounds', () => {
@@ -16,7 +16,7 @@ test('the notice typed as text is read, clamped to the manifest bounds', () => {
 });
 
 test('texts are trimmed', () => {
-  const config = normalizeConfig({ store_name: ' E.Leclerc Albi ', loyalty_cards: ' A=12345678 ' });
-  assert.equal(config.store_name, 'E.Leclerc Albi');
+  const config = normalizeConfig({ stores: ' A = 24/7 ', loyalty_cards: ' A=12345678 ' });
+  assert.equal(config.stores, 'A = 24/7');
   assert.equal(config.loyalty_cards, 'A=12345678');
 });

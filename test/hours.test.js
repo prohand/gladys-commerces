@@ -7,7 +7,7 @@ import {
   OpeningHoursError,
   parseOpeningHours,
   storeStatus,
-} from '../src/leclerc/hours.js';
+} from '../src/shops/hours.js';
 
 const PARIS = 'Europe/Paris';
 // 2026-10-30 is a Friday; Paris is UTC+1 from 2026-10-25 on.

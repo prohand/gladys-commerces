@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Only the latest release of the E.Leclerc integration receives security fixes.
+Only the latest release of the integration receives security fixes.
 Update the integration from the Gladys store before reporting an issue.
 
 | Version      | Supported |
@@ -33,12 +33,12 @@ In scope: the code of this repository and the Docker image it publishes.
 
 Out of scope: Gladys Assistant itself (report to
 [GladysAssistant/Gladys](https://github.com/GladysAssistant/Gladys/security)) and
-E.Leclerc services.
+the services of the retailers whose cards are stored.
 
 ## How the integration limits its exposure
 
 - It holds no secret and makes no network call: no account, no API key, no password.
-  It never asks for an E.Leclerc password.
+  It never asks for a retailer password.
 - Loyalty card numbers stay in the Gladys configuration and in the integration's
   `/data/cards.json` (numbers and balances only); the image runs as a non-root user on
   a read-only root filesystem.

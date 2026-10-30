@@ -8,15 +8,15 @@
 // `undefined`, strings typed in a number field or values out of range.
 // -----------------------------------------------------------------------------
 
-/** Every store is in France: the hours are read on the French clock. */
+/** The stores are in France: the hours are read on the French clock, holidays included. */
 export const TIME_ZONE = 'Europe/Paris';
 
 export const DEFAULT_CONFIG = {
-  store_name: 'E.Leclerc',
-  opening_hours: 'Mo-Sa 08:30-20:00; PH off',
+  // `Name = hours | Name = hours`, read by src/shops/stores.js. Empty: no store.
+  stores: '',
   // Minutes before an opening or a closing that fire the "soon" triggers.
   notice_minutes: 30,
-  // `Name=number; Name=number`, read by src/leclerc/cards.js. Empty: no card.
+  // `Name=number; Name=number`, read by src/shops/cards.js. Empty: no card.
   loyalty_cards: '',
 };
 
@@ -33,8 +33,7 @@ export function normalizeConfig(raw = {}) {
   const text = (value, fallback) =>
     typeof value === 'string' && value.trim() !== '' ? value.trim() : fallback;
   return {
-    store_name: text(raw.store_name, DEFAULT_CONFIG.store_name),
-    opening_hours: text(raw.opening_hours, DEFAULT_CONFIG.opening_hours),
+    stores: text(raw.stores, DEFAULT_CONFIG.stores),
     notice_minutes: bounded(raw.notice_minutes, 'notice_minutes'),
     loyalty_cards: text(raw.loyalty_cards, DEFAULT_CONFIG.loyalty_cards),
   };

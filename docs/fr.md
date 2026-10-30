@@ -1,37 +1,40 @@
-# E.Leclerc — guide d'utilisation
+# Commerces — guide d'utilisation
 
-Cette intégration apporte deux choses dans Gladys :
+Cette intégration apporte dans Gladys deux choses sur les commerces où vous allez :
 
-- les **horaires** de votre magasin : est-il ouvert, quand ouvre-t-il ou ferme-t-il ;
-- vos **cartes de fidélité** (Carte E.Leclerc) : leur code-barres sur le tableau de
+- leurs **horaires** : quels commerces sont ouverts, quand ils ouvrent ou ferment ;
+- vos **cartes de fidélité**, de toutes enseignes : leur code-barres sur le tableau de
   bord, à scanner en caisse depuis votre téléphone, et leur cagnotte.
 
 Tout est calculé dans Gladys : aucun compte, aucun mot de passe, rien n'est envoyé
-sur internet. C'est une intégration communautaire : elle n'est ni faite, ni vérifiée,
-ni assistée par E.Leclerc.
+sur internet.
 
 ## Installation
 
-Ouvrez **Intégrations**, cherchez **E.Leclerc**, installez-la, puis remplissez
+Ouvrez **Intégrations**, cherchez l'intégration, installez-la, puis remplissez
 l'écran **Configuration**.
 
-| Champ                   | Que mettre                                                                         |
-| ----------------------- | ---------------------------------------------------------------------------------- |
-| Nom du magasin          | Le nom de l'appareil magasin dans Gladys, ex. `E.Leclerc Carcassonne`.             |
-| Horaires d'ouverture    | Les horaires du magasin (voir plus bas). Par défaut : `Mo-Sa 08:30-20:00; PH off`. |
-| Préavis avant ... (min) | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.   |
-| Numéros de carte        | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                |
+| Champ                   | Que mettre                                                                                 |
+| ----------------------- | ------------------------------------------------------------------------------------------ |
+| Commerces et horaires   | Vos commerces et leurs horaires (voir plus bas). Vide si vous voulez seulement les cartes. |
+| Préavis avant ... (min) | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.           |
+| Numéros de carte        | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                        |
 
-Cliquez ensuite sur **Tester la configuration** : la réponse dit si le magasin est
-ouvert et quelles cartes ont été comprises.
+Cliquez ensuite sur **Tester la configuration** : la réponse dit, commerce par
+commerce, s'il est ouvert, et quelles cartes ont été comprises.
 
 Enfin, ouvrez l'onglet **Découverte** de l'intégration et créez les appareils.
 
-### Horaires d'ouverture
+### Commerces et horaires
 
-E.Leclerc ne publie pas d'API pour les horaires de ses magasins : vous les saisissez,
-dans la syntaxe OpenStreetMap — souvent déjà affichée sur la fiche du magasin sur une
-carte :
+Un commerce par entrée : un nom, `=`, ses horaires. Séparez les commerces par `|` :
+
+```
+Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00 | Boulangerie = Tu-Su 07:00-13:00,15:30-19:30
+```
+
+Les horaires suivent la syntaxe OpenStreetMap — souvent déjà affichée sur la fiche du
+commerce sur une carte :
 
 | Vous écrivez                        | Cela veut dire                                        |
 | ----------------------------------- | ----------------------------------------------------- |
@@ -45,56 +48,62 @@ carte :
 
 Jours en anglais : `Mo Tu We Th Fr Sa Su`. `PH` = jours fériés français (lundi de
 Pâques, Ascension et Pentecôte compris). Les heures sont lues à l'heure de Paris.
+10 commerces au plus.
+
+Le nom identifie le commerce : le renommer crée un nouvel appareil dans Gladys.
 
 ### Cartes de fidélité
 
-Une carte par personne : un nom, `=`, puis le numéro imprimé sous le code-barres de
-la carte. Séparez les cartes par `;` :
+Une carte par entrée : un nom (enseigne, titulaire), `=`, puis le numéro imprimé sous
+le code-barres de la carte. Séparez les cartes par `;` :
 
 ```
-Marie=2900123456785; Paul=2900987654327
+Leclerc Marie=2900123456785; Carrefour=2900987654327
 ```
 
-Les espaces et tirets du numéro sont ignorés ; le nom est facultatif. 10 cartes au
+Les espaces et tirets du numéro sont ignorés ; le nom est facultatif. 20 cartes au
 plus.
 
-**À propos de la cagnotte.** E.Leclerc ne propose pas d'API publique pour ses cartes :
-la cagnotte « Ticket E.Leclerc » ne peut pas être lue automatiquement sans votre mot
-de passe, par une interface non officielle qui peut cesser de marcher à tout moment.
+**À propos de la cagnotte.** Les enseignes ne proposent pas d'API publique pour leurs
+cartes : une cagnotte ne peut pas être lue automatiquement sans votre mot de passe,
+par une interface non officielle qui peut cesser de marcher à tout moment.
 L'intégration ne le fait pas. Vous saisissez la cagnotte vous-même — depuis le widget
 ou une scène — et Gladys la garde, avec son historique.
 
 ## Appareils
 
-| Appareil               | Fonctionnalité                       | Remarques                                        |
-| ---------------------- | ------------------------------------ | ------------------------------------------------ |
-| Magasin                | Ouvert (1 = ouvert, 0 = fermé)       | Utilisable dans toute condition de scène         |
-| Magasin                | Minutes avant ouverture ou fermeture | Mis à jour chaque minute                         |
-| E.Leclerc card _<nom>_ | Cagnotte (€)                         | Saisie par vous ; utilisable dans les conditions |
+| Appareil        | Fonctionnalité                       | Remarques                                        |
+| --------------- | ------------------------------------ | ------------------------------------------------ |
+| Chaque commerce | Ouvert (1 = ouvert, 0 = fermé)       | Utilisable dans toute condition de scène         |
+| Chaque commerce | Minutes avant ouverture ou fermeture | Mis à jour chaque minute                         |
+| Chaque carte    | Cagnotte (€)                         | Saisie par vous ; utilisable dans les conditions |
 
 ## Scènes
 
 ### Déclencheurs
 
-- **Le magasin ouvre bientôt** (`store_opening_soon`) et **Le magasin ferme
+- **Un commerce ouvre bientôt** (`store_opening_soon`) et **Un commerce ferme
   bientôt** (`store_closing_soon`) : une seule fois, le nombre de minutes configuré
-  avant. Variables : nom du magasin, heure, minutes restantes. Exemple : « Le
-  magasin ferme à {{time}}, plus que {{minutes_left}} minutes. »
+  avant. Filtre : le commerce (vide = n'importe lequel). Variables : nom du commerce,
+  heure, minutes restantes. Exemple : « {{store_name}} ferme à {{time}}, plus que
+  {{minutes_left}} minutes. »
 
-« Le magasin est ouvert » et « la cagnotte dépasse 10 € » sont des états : utilisez
+« Le commerce est ouvert » et « la cagnotte dépasse 10 € » sont des états : utilisez
 les conditions sur appareil de Gladys.
 
 ### Actions
 
-- **Le magasin est-il ouvert ?** (`is_store_open`) : sorties _ouvert_ (oui/non),
-  l'heure du prochain changement (HH:MM) et les minutes d'ici là.
+- **Un commerce est-il ouvert ?** (`is_store_open`) : choisissez un commerce. Sorties :
+  _ouvert_ (oui/non), l'heure du prochain changement (HH:MM) et les minutes d'ici là.
 - **Mettre à jour une cagnotte** (`set_loyalty_balance`) : choisissez une carte, puis
   _fixer la cagnotte à_ un montant, ou _ajouter à la cagnotte_ (un montant négatif
   pour dépenser). Sortie : la nouvelle cagnotte. Elle ne descend jamais sous 0.
 
 ## Tableau de bord
 
-- **Horaires du magasin** : ouvert ou fermé, jusqu'à quand, horaires du jour.
+- **Horaires des commerces** : tous les commerces d'un coup d'œil (ouvert ou fermé,
+  jusqu'à quand), ou — avec le réglage _Commerce_ — un commerce en détail, avec un
+  compte à rebours et les horaires du jour.
 - **Carte de fidélité** : le code-barres d'une carte (réglage _Carte_ ; vide = la
   première), sa cagnotte et son numéro, et un bouton **Modifier la cagnotte**.
   Présentez-le en caisse : montez la luminosité du téléphone pour le scanner.
@@ -107,8 +116,9 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 - **« Les horaires ne sont pas compris »** : le message cite la partie fautive.
   Utilisez les jours en anglais (`Mo`, pas `Lu`) et des heures `HH:MM` (`08:30`,
   pas `8h30`).
+- **Un commerce est « non compris »** : chaque entrée doit être `Nom = horaires`,
+  entrées séparées par `|`.
 - **Une carte est « non comprise »** : le numéro doit faire 6 à 20 chiffres.
-  **Tester la configuration** liste ce qui n'a pas été compris.
 - **La caisse ne lit pas le code-barres** : vérifiez le numéro, montez la luminosité
   et zoomez sur le widget. Si votre carte porte un autre type de code-barres,
   signalez-le dans une issue.

@@ -1,16 +1,16 @@
 // -----------------------------------------------------------------------------
 // Manifest actions: the buttons of the Configuration screen.
 //
-//   - `test_configuration`: reads the opening hours and the loyalty cards, and
-//     says what came out of both.
+//   - `test_configuration`: reads the stores and the loyalty cards, and says
+//     what came out of both.
 //
 // The resolved multi-language object is shown under the button; a thrown
 // error is shown too. Keys are stored: never renamed.
 // -----------------------------------------------------------------------------
 
 import { localize, pick } from '../i18n.js';
-import { cardModules } from '../leclerc/barcode.js';
-import { describeHoursError, describeStatus } from '../leclerc/store.js';
+import { cardModules } from '../shops/barcode.js';
+import { describeHoursError, describeStatus } from '../shops/stores.js';
 
 export const ACTIONS = { TEST_CONFIGURATION: 'test_configuration' };
 
@@ -47,13 +47,45 @@ export function describeCards(wallet) {
   });
 }
 
-export function actionHandlers({ store, wallet }) {
+/** One line per store: "Bakery: Open, closes at 20:00." */
+export function describeStores(watcher) {
+  return localize((language) => {
+    const lines = watcher.stores.map((store) => {
+      const status = watcher.status(store);
+      const text = status ? describeStatus(status) : describeHoursError(store.error);
+      return `${store.name}${language === 'fr' ? ' :' : ':'} ${text[language]}`;
+    });
+    if (lines.length === 0) {
+      lines.push(
+        pick(language, {
+          en: 'No store.',
+          fr: 'Aucun commerce.',
+          de: 'Kein Geschäft.',
+          es: 'Ningún comercio.',
+        }),
+      );
+    }
+    if (watcher.errors.length > 0) {
+      const wrong = watcher.errors.join(' / ');
+      lines.push(
+        pick(language, {
+          en: `Not understood (Name = hours expected): ${wrong}.`,
+          fr: `Non compris (Nom = horaires attendu) : ${wrong}.`,
+          de: `Nicht verstanden (Name = Zeiten erwartet): ${wrong}.`,
+          es: `No entendido (se espera Nombre = horario): ${wrong}.`,
+        }),
+      );
+    }
+    return lines.join('\n');
+  });
+}
+
+export function actionHandlers({ watcher, wallet }) {
   return {
     async [ACTIONS.TEST_CONFIGURATION]() {
-      const status = store.status();
-      const hours = status ? describeStatus(status) : describeHoursError(store.error);
+      const stores = describeStores(watcher);
       const cards = describeCards(wallet);
-      return localize((language) => `${hours[language]} ${cards[language]}`);
+      return localize((language) => `${stores[language]}\n${cards[language]}`);
     },
   };
 }

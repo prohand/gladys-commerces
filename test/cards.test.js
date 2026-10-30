@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 import { normalizeConfig } from '../src/config.js';
 import { cardIds } from '../src/devices/index.js';
-import { fileStorage, formatNumber, parseCards, Wallet } from '../src/leclerc/cards.js';
+import { fileStorage, formatNumber, parseCards, Wallet } from '../src/shops/cards.js';
 import { fakeClock, MARIE, memoryStorage, PAUL } from './helpers/fixtures.js';
 
 test('cards: names, separators, spaces and dashes', () => {
@@ -14,7 +14,7 @@ test('cards: names, separators, spaces and dashes', () => {
   assert.deepEqual(cards, [
     { number: MARIE, name: 'Marie' },
     { number: PAUL, name: 'Paul' },
-    { number: '4006381333931', name: '•••• 3931' },
+    { number: '4006381333931', name: 'Card •••• 3931' },
   ]);
   assert.deepEqual(errors, []);
 });
@@ -26,13 +26,13 @@ test('cards: what is not a number is reported, duplicates are dropped', () => {
   assert.deepEqual(parseCards(''), { cards: [], errors: [] });
 });
 
-test('at most ten cards', () => {
+test('at most twenty cards', () => {
   const text = Array.from(
-    { length: 12 },
-    (_, i) => `C${i}=1000000${String(i).padStart(2, '0')}`,
+    { length: 22 },
+    (_, i) => `C${i}=10000${String(i).padStart(4, '0')}`,
   ).join(';');
   const { cards, errors } = parseCards(text);
-  assert.equal(cards.length, 10);
+  assert.equal(cards.length, 20);
   assert.equal(errors.length, 2);
 });
 

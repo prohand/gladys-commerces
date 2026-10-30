@@ -1,5 +1,6 @@
 // -----------------------------------------------------------------------------
-// Entry point of the E.Leclerc integration for Gladys Assistant.
+// Entry point of the shops integration for Gladys Assistant: store hours and
+// loyalty cards.
 //
 // The SDK reads GLADYS_HOST_API_URL, GLADYS_INTEGRATION_TOKEN and
 // GLADYS_INTEGRATION_SELECTOR, set by the Gladys supervisor on the container.
@@ -18,7 +19,7 @@ gladys.handleShutdown((signal) => {
   app.stop();
 });
 
-logger.info('Starting the E.Leclerc integration...');
+logger.info('Starting the shops integration...');
 gladys.connect().catch((err) => {
   logger.error('Initial connection failed', err);
   process.exit(1);

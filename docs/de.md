@@ -1,37 +1,42 @@
-# E.Leclerc — Benutzerhandbuch
+# Geschäfte — Benutzerhandbuch
 
-Diese Integration bringt zwei Dinge zu E.Leclerc in Gladys:
+Diese Integration bringt zwei Dinge zu den Geschäften, in die Sie gehen, in Gladys:
 
-- die **Öffnungszeiten** Ihres Markts: ist er geöffnet, wann öffnet oder schließt er;
-- Ihre **Kundenkarten** (Carte E.Leclerc): ihr Barcode auf dem Dashboard, zum
-  Scannen an der Kasse mit dem Handy, und ihr Guthaben.
+- ihre **Öffnungszeiten**: welche Geschäfte geöffnet sind, wann sie öffnen oder
+  schließen;
+- Ihre **Kundenkarten** aller Marken: ihr Barcode auf dem Dashboard, zum Scannen an
+  der Kasse mit dem Handy, und ihr Guthaben.
 
 Alles wird in Gladys berechnet: kein Konto, kein Passwort, nichts wird ins Internet
-gesendet. Dies ist eine Community-Integration: Sie wird von E.Leclerc weder erstellt
-noch geprüft noch unterstützt.
+gesendet.
 
 ## Einrichtung
 
-Öffnen Sie **Integrationen**, suchen Sie **E.Leclerc**, installieren Sie sie und
+Öffnen Sie **Integrationen**, suchen Sie die Integration, installieren Sie sie und
 füllen Sie dann den Bildschirm **Konfiguration** aus.
 
-| Feld                   | Was eintragen                                                                 |
-| ---------------------- | ----------------------------------------------------------------------------- |
-| Name des Markts        | Der Name des Markt-Geräts in Gladys, z. B. `E.Leclerc Carcassonne`.           |
-| Öffnungszeiten         | Die Zeiten Ihres Markts (siehe unten). Standard: `Mo-Sa 08:30-20:00; PH off`. |
-| Vorlauf vor ... (Min.) | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.          |
-| Kartennummern          | Ihre Kundenkarten (siehe unten). Leer lassen, wenn Sie keine haben.           |
+| Feld                         | Was eintragen                                                                   |
+| ---------------------------- | ------------------------------------------------------------------------------- |
+| Geschäfte und Öffnungszeiten | Ihre Geschäfte und ihre Zeiten (siehe unten). Leer, wenn Sie nur Karten wollen. |
+| Vorlauf vor ... (Min.)       | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.            |
+| Kartennummern                | Ihre Kundenkarten (siehe unten). Leer lassen, wenn Sie keine haben.             |
 
-Klicken Sie dann auf **Konfiguration testen**: Die Antwort sagt, ob der Markt
-geöffnet ist und welche Karten verstanden wurden.
+Klicken Sie dann auf **Konfiguration testen**: Die Antwort sagt Geschäft für Geschäft,
+ob es geöffnet ist, und welche Karten verstanden wurden.
 
 Öffnen Sie zuletzt den Reiter **Erkennung** der Integration und legen Sie die Geräte an.
 
-### Öffnungszeiten
+### Geschäfte und Öffnungszeiten
 
-E.Leclerc veröffentlicht keine API für die Öffnungszeiten seiner Märkte: Sie geben
-sie ein, in der OpenStreetMap-Syntax — oft schon auf der Kartenseite des Markts zu
-sehen:
+Ein Geschäft pro Eintrag: ein Name, `=`, seine Zeiten. Trennen Sie die Geschäfte mit
+`|`:
+
+```
+Leclerc = Mo-Sa 08:30-20:00; PH off | Apotheke = Mo-Fr 09:00-19:00 | Bäckerei = Tu-Su 07:00-13:00,15:30-19:30
+```
+
+Die Zeiten folgen der OpenStreetMap-Syntax — oft schon auf der Kartenseite des
+Geschäfts zu sehen:
 
 | Sie schreiben                       | Bedeutung                                            |
 | ----------------------------------- | ---------------------------------------------------- |
@@ -45,59 +50,66 @@ sehen:
 
 Tage: `Mo Tu We Th Fr Sa Su`. `PH` = französische Feiertage (Ostermontag, Christi
 Himmelfahrt und Pfingstmontag inbegriffen). Die Zeiten gelten nach Pariser Uhrzeit.
+Höchstens 10 Geschäfte.
+
+Der Name kennzeichnet das Geschäft: Umbenennen legt ein neues Gerät in Gladys an.
 
 ### Kundenkarten
 
-Eine Karte pro Person: ein Name, `=`, dann die unter dem Barcode der Karte gedruckte
-Nummer. Trennen Sie die Karten mit `;`:
+Eine Karte pro Eintrag: ein Name (Marke, Inhaber), `=`, dann die unter dem Barcode
+der Karte gedruckte Nummer. Trennen Sie die Karten mit `;`:
 
 ```
-Marie=2900123456785; Paul=2900987654327
+Leclerc Marie=2900123456785; Carrefour=2900987654327
 ```
 
 Leerzeichen und Bindestriche in der Nummer werden ignoriert; der Name ist optional.
-Höchstens 10 Karten.
+Höchstens 20 Karten.
 
-**Zum Guthaben.** E.Leclerc bietet keine öffentliche API für seine Karten: Das
-Guthaben „Ticket E.Leclerc“ kann nicht automatisch gelesen werden, ohne Ihr Passwort
-über eine inoffizielle Schnittstelle, die jederzeit ausfallen kann. Die Integration
-tut das nicht. Sie geben das Guthaben selbst ein — im Widget oder in einer Szene —
-und Gladys speichert es mit seinem Verlauf.
+**Zum Guthaben.** Die Händler bieten keine öffentliche API für ihre Karten: Ein
+Guthaben kann nicht automatisch gelesen werden, ohne Ihr Passwort über eine
+inoffizielle Schnittstelle, die jederzeit ausfallen kann. Die Integration tut das
+nicht. Sie geben das Guthaben selbst ein — im Widget oder in einer Szene — und Gladys
+speichert es mit seinem Verlauf.
 
 ## Geräte
 
-| Gerät                   | Funktion                                 | Hinweise                                     |
-| ----------------------- | ---------------------------------------- | -------------------------------------------- |
-| Markt                   | Geöffnet (1 = geöffnet, 0 = geschlossen) | In jeder Szenenbedingung nutzbar             |
-| Markt                   | Minuten bis zur Öffnung oder Schließung  | Jede Minute aktualisiert                     |
-| E.Leclerc card _<Name>_ | Guthaben (€)                             | Von Ihnen eingegeben; in Bedingungen nutzbar |
+| Gerät          | Funktion                                 | Hinweise                                     |
+| -------------- | ---------------------------------------- | -------------------------------------------- |
+| Jedes Geschäft | Geöffnet (1 = geöffnet, 0 = geschlossen) | In jeder Szenenbedingung nutzbar             |
+| Jedes Geschäft | Minuten bis zur Öffnung oder Schließung  | Jede Minute aktualisiert                     |
+| Jede Karte     | Guthaben (€)                             | Von Ihnen eingegeben; in Bedingungen nutzbar |
 
 ## Szenen
 
 ### Auslöser
 
-- **Der Markt öffnet bald** (`store_opening_soon`) und **Der Markt schließt bald**
-  (`store_closing_soon`): einmal, die eingestellte Anzahl Minuten vorher. Variablen:
-  Name des Markts, Uhrzeit, verbleibende Minuten. Beispiel: „Der Markt schließt um
-  {{time}}, noch {{minutes_left}} Minuten.“
+- **Ein Geschäft öffnet bald** (`store_opening_soon`) und **Ein Geschäft schließt
+  bald** (`store_closing_soon`): einmal, die eingestellte Anzahl Minuten vorher.
+  Filter: das Geschäft (leer = beliebig). Variablen: Name des Geschäfts, Uhrzeit,
+  verbleibende Minuten. Beispiel: „{{store_name}} schließt um {{time}}, noch
+  {{minutes_left}} Minuten.“
 
-„Der Markt ist geöffnet“ und „das Guthaben liegt über 10 €“ sind Zustände: Nutzen
+„Das Geschäft ist geöffnet“ und „das Guthaben liegt über 10 €“ sind Zustände: Nutzen
 Sie die Gerätebedingungen von Gladys.
 
 ### Aktionen
 
-- **Ist der Markt geöffnet?** (`is_store_open`): Ausgaben _geöffnet_ (ja/nein), die
-  Uhrzeit der nächsten Änderung (HH:MM) und die Minuten bis dahin.
+- **Ist ein Geschäft geöffnet?** (`is_store_open`): Wählen Sie ein Geschäft. Ausgaben:
+  _geöffnet_ (ja/nein), die Uhrzeit der nächsten Änderung (HH:MM) und die Minuten bis
+  dahin.
 - **Guthaben einer Kundenkarte ändern** (`set_loyalty_balance`): Wählen Sie eine
   Karte, dann _Guthaben setzen auf_ einen Betrag oder _zum Guthaben addieren_ (ein
   negativer Betrag zum Ausgeben). Ausgabe: das neue Guthaben. Es fällt nie unter 0.
 
 ## Dashboard
 
-- **Öffnungszeiten**: geöffnet oder geschlossen, bis wann, heutige Zeiten.
+- **Öffnungszeiten**: alle Geschäfte auf einen Blick (geöffnet oder geschlossen, bis
+  wann), oder — mit der Einstellung _Geschäft_ — ein Geschäft im Detail, mit
+  Countdown und den heutigen Zeiten.
 - **Kundenkarte**: der Barcode einer Karte (Einstellung _Karte_; leer = die erste),
-  ihr Guthaben und ihre Nummer, und eine Schaltfläche **Guthaben aktualisieren**.
-  An der Kasse vorzeigen: Erhöhen Sie die Helligkeit des Handys für den Scanner.
+  ihr Guthaben und ihre Nummer, und eine Schaltfläche **Guthaben aktualisieren**. An
+  der Kasse vorzeigen: Erhöhen Sie die Helligkeit des Handys für den Scanner.
 
 Der Barcode ist ein EAN-13, wenn die Kartennummer einer ist (13 Ziffern, gültige
 Prüfziffer), sonst ein Code 128. Kassenscanner lesen beide.
@@ -107,8 +119,9 @@ Prüfziffer), sonst ein Code 128. Kassenscanner lesen beide.
 - **„Die Öffnungszeiten werden nicht verstanden“**: Die Meldung nennt den falschen
   Teil. Verwenden Sie die englischen Tagesnamen (`Mo`, `Tu`…) und `HH:MM`-Zeiten
   (`08:30`, nicht `8.30`).
+- **Ein Geschäft wird „nicht verstanden“**: Jeder Eintrag muss `Name = Zeiten` sein,
+  Einträge durch `|` getrennt.
 - **Eine Karte wird „nicht verstanden“**: Die Nummer muss 6 bis 20 Ziffern haben.
-  **Konfiguration testen** listet, was nicht verstanden wurde.
 - **Die Kasse liest den Barcode nicht**: Prüfen Sie die Nummer, erhöhen Sie die
   Helligkeit und zoomen Sie auf das Widget. Trägt Ihre Karte eine andere Barcode-Art,
   melden Sie es in einem Issue.

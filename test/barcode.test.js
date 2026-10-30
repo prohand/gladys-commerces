@@ -10,8 +10,8 @@ import {
   ean13CheckDigit,
   ean13Modules,
   isEan13,
-} from '../src/leclerc/barcode.js';
-import { crc32 } from '../src/leclerc/png.js';
+} from '../src/shops/barcode.js';
+import { crc32 } from '../src/shops/png.js';
 
 // Reference modules produced by the python-barcode library, independently of
 // this code.

@@ -1,12 +1,12 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "E.Leclerc",
+  "name": "Commerces",
   "description": {
-    "en": "Opening hours of your E.Leclerc store and your loyalty cards on the dashboard.",
-    "fr": "Horaires de votre magasin E.Leclerc et vos cartes de fidélité sur le tableau de bord.",
-    "de": "Öffnungszeiten Ihres E.Leclerc-Markts und Ihre Kundenkarten auf dem Dashboard.",
-    "es": "Horario de su tienda E.Leclerc y sus tarjetas de fidelidad en el panel."
+    "en": "Opening hours of your shops and your loyalty cards on the Gladys dashboard.",
+    "fr": "Horaires de vos commerces et vos cartes de fidélité sur le tableau de bord Gladys.",
+    "de": "Öffnungszeiten Ihrer Geschäfte und Ihre Kundenkarten auf dem Gladys-Dashboard.",
+    "es": "Horario de sus comercios y sus tarjetas de fidelidad en el panel de Gladys."
   },
   "version": "1.0.0",
   "docker_image": "ghcr.io/prohand/gladys-eleclerc:1.0.0",
@@ -14,16 +14,16 @@
   "cover_image": "https://raw.githubusercontent.com/prohand/gladys-eleclerc/main/cover.png",
   "categories": ["services"],
   "keywords": [
-    "leclerc",
-    "e.leclerc",
-    "supermarché",
+    "commerces",
+    "magasin",
     "horaires",
     "opening hours",
     "carte de fidélité",
     "loyalty card",
-    "ticket leclerc",
     "code-barres",
-    "magasin"
+    "supermarché",
+    "pharmacie",
+    "boulangerie"
   ],
   "countries": ["FR"],
   "transports": ["local"],
@@ -38,10 +38,10 @@
         "es": "Primeros pasos"
       },
       "description": {
-        "en": "Everything is computed in Gladys, with no account: the opening hours you type, and your loyalty cards, whose barcode the dashboard shows at the till. E.Leclerc has no public API: the card balance is the one you enter.",
-        "fr": "Tout est calculé dans Gladys, sans compte : les horaires que vous saisissez, et vos cartes de fidélité, dont le tableau de bord affiche le code-barres en caisse. E.Leclerc n'a pas d'API publique : la cagnotte est celle que vous saisissez.",
-        "de": "Alles wird in Gladys berechnet, ohne Konto: die Öffnungszeiten, die Sie eingeben, und Ihre Kundenkarten, deren Barcode das Dashboard an der Kasse zeigt. E.Leclerc hat keine öffentliche API: Das Guthaben ist das, das Sie eingeben.",
-        "es": "Todo se calcula en Gladys, sin cuenta: el horario que usted escribe, y sus tarjetas de fidelidad, cuyo código de barras muestra el panel en caja. E.Leclerc no tiene API pública: el saldo es el que usted introduce."
+        "en": "Everything is computed in Gladys, with no account: the opening hours of the shops you go to, and your loyalty cards of any brand, whose barcode the dashboard shows at the till. Shops have no public API for their cards: the balance is the one you enter.",
+        "fr": "Tout est calculé dans Gladys, sans compte : les horaires des commerces où vous allez, et vos cartes de fidélité de toutes enseignes, dont le tableau de bord affiche le code-barres en caisse. Les enseignes n'ont pas d'API publique pour leurs cartes : la cagnotte est celle que vous saisissez.",
+        "de": "Alles wird in Gladys berechnet, ohne Konto: die Öffnungszeiten Ihrer Geschäfte und Ihre Kundenkarten aller Marken, deren Barcode das Dashboard an der Kasse zeigt. Die Händler haben keine öffentliche API für ihre Karten: Das Guthaben ist das, das Sie eingeben.",
+        "es": "Todo se calcula en Gladys, sin cuenta: el horario de los comercios a los que va, y sus tarjetas de fidelidad de cualquier marca, cuyo código de barras muestra el panel en caja. Los comercios no tienen API pública para sus tarjetas: el saldo es el que usted introduce."
       },
       "links": [
         {
@@ -65,62 +65,38 @@
       ]
     },
     {
-      "key": "store_section",
+      "key": "stores_section",
       "type": "section",
       "label": {
-        "en": "Your store",
-        "fr": "Votre magasin",
-        "de": "Ihr Markt",
-        "es": "Su tienda"
+        "en": "Your shops",
+        "fr": "Vos commerces",
+        "de": "Ihre Geschäfte",
+        "es": "Sus comercios"
+      },
+      "description": {
+        "en": "One shop per entry: a name, an equals sign, its hours in the OpenStreetMap syntax (days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed). Shops separated by a vertical bar |.",
+        "fr": "Un commerce par entrée : un nom, un signe égal, ses horaires en syntaxe OpenStreetMap (jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé). Commerces séparés par une barre verticale |.",
+        "de": "Ein Geschäft pro Eintrag: ein Name, ein Gleichheitszeichen, seine Zeiten in OpenStreetMap-Syntax (Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen). Geschäfte durch einen senkrechten Strich | getrennt.",
+        "es": "Un comercio por entrada: un nombre, un signo igual, su horario en sintaxis OpenStreetMap (días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado). Comercios separados por una barra vertical |."
       }
     },
     {
-      "key": "store_name",
+      "key": "stores",
       "type": "string",
       "label": {
-        "en": "Store name",
-        "fr": "Nom du magasin",
-        "de": "Name des Markts",
-        "es": "Nombre de la tienda"
-      },
-      "description": {
-        "en": "The name of the store device in Gladys.",
-        "fr": "Le nom de l'appareil magasin dans Gladys.",
-        "de": "Der Name des Markt-Geräts in Gladys.",
-        "es": "El nombre del dispositivo tienda en Gladys."
+        "en": "Shops and opening hours",
+        "fr": "Commerces et horaires",
+        "de": "Geschäfte und Öffnungszeiten",
+        "es": "Comercios y horario"
       },
       "placeholder": {
-        "en": "e.g. E.Leclerc Carcassonne",
-        "fr": "ex. E.Leclerc Carcassonne",
-        "de": "z. B. E.Leclerc Carcassonne",
-        "es": "p. ej. E.Leclerc Carcassonne"
+        "en": "e.g. Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacy = Mo-Fr 09:00-19:00",
+        "fr": "ex. Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00",
+        "de": "z. B. Leclerc = Mo-Sa 08:30-20:00; PH off | Apotheke = Mo-Fr 09:00-19:00",
+        "es": "p. ej. Leclerc = Mo-Sa 08:30-20:00; PH off | Farmacia = Mo-Fr 09:00-19:00"
       },
       "required": false,
-      "default": "E.Leclerc"
-    },
-    {
-      "key": "opening_hours",
-      "type": "string",
-      "label": {
-        "en": "Opening hours",
-        "fr": "Horaires d'ouverture",
-        "de": "Öffnungszeiten",
-        "es": "Horario de apertura"
-      },
-      "description": {
-        "en": "OpenStreetMap syntax: days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed, rules separated by a semicolon.",
-        "fr": "Syntaxe OpenStreetMap : jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé, règles séparées par un point-virgule.",
-        "de": "OpenStreetMap-Syntax: Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen, Regeln durch Semikolon getrennt.",
-        "es": "Sintaxis OpenStreetMap: días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado, reglas separadas por punto y coma."
-      },
-      "placeholder": {
-        "en": "e.g. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off",
-        "fr": "ex. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off",
-        "de": "z. B. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off",
-        "es": "p. ej. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off"
-      },
-      "required": true,
-      "default": "Mo-Sa 08:30-20:00; PH off"
+      "default": ""
     },
     {
       "key": "notice_minutes",
@@ -152,10 +128,10 @@
         "es": "Tarjetas de fidelidad"
       },
       "description": {
-        "en": "One card per person: a name, an equals sign, the number printed under the barcode. Cards separated by a semicolon.",
-        "fr": "Une carte par personne : un nom, un signe égal, le numéro imprimé sous le code-barres. Cartes séparées par un point-virgule.",
-        "de": "Eine Karte pro Person: ein Name, ein Gleichheitszeichen, die unter dem Barcode gedruckte Nummer. Karten durch Semikolon getrennt.",
-        "es": "Una tarjeta por persona: un nombre, un signo igual, el número impreso bajo el código de barras. Tarjetas separadas por punto y coma."
+        "en": "One card per entry: a name (brand, holder), an equals sign, the number printed under the barcode. Cards separated by a semicolon.",
+        "fr": "Une carte par entrée : un nom (enseigne, titulaire), un signe égal, le numéro imprimé sous le code-barres. Cartes séparées par un point-virgule.",
+        "de": "Eine Karte pro Eintrag: ein Name (Marke, Inhaber), ein Gleichheitszeichen, die unter dem Barcode gedruckte Nummer. Karten durch Semikolon getrennt.",
+        "es": "Una tarjeta por entrada: un nombre (marca, titular), un signo igual, el número impreso bajo el código de barras. Tarjetas separadas por punto y coma."
       }
     },
     {
@@ -168,10 +144,10 @@
         "es": "Números de tarjeta"
       },
       "placeholder": {
-        "en": "e.g. Marie=2900123456785; Paul=2900987654327",
-        "fr": "ex. Marie=2900123456785; Paul=2900987654327",
-        "de": "z. B. Marie=2900123456785; Paul=2900987654327",
-        "es": "p. ej. Marie=2900123456785; Paul=2900987654327"
+        "en": "e.g. Leclerc Marie=2900123456785; Carrefour=2900987654327",
+        "fr": "ex. Leclerc Marie=2900123456785; Carrefour=2900987654327",
+        "de": "z. B. Leclerc Marie=2900123456785; Carrefour=2900987654327",
+        "es": "p. ej. Leclerc Marie=2900123456785; Carrefour=2900987654327"
       },
       "required": false,
       "default": ""
@@ -193,26 +169,39 @@
     {
       "key": "store_opening_soon",
       "label": {
-        "en": "The store opens soon",
-        "fr": "Le magasin ouvre bientôt",
-        "de": "Der Markt öffnet bald",
-        "es": "La tienda abre pronto"
+        "en": "A shop opens soon",
+        "fr": "Un commerce ouvre bientôt",
+        "de": "Ein Geschäft öffnet bald",
+        "es": "Un comercio abre pronto"
       },
       "description": {
-        "en": "The store opens within the configured notice.",
-        "fr": "Le magasin ouvre dans le délai de préavis configuré.",
-        "de": "Der Markt öffnet innerhalb des eingestellten Vorlaufs.",
-        "es": "La tienda abre dentro del aviso configurado."
+        "en": "A shop opens within the configured notice.",
+        "fr": "Un commerce ouvre dans le délai de préavis configuré.",
+        "de": "Ein Geschäft öffnet innerhalb des eingestellten Vorlaufs.",
+        "es": "Un comercio abre dentro del aviso configurado."
       },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Store",
+            "fr": "Commerce",
+            "de": "Geschäft",
+            "es": "Comercio"
+          }
+        }
+      ],
       "variables": [
         {
           "key": "store_name",
           "type": "string",
           "label": {
-            "en": "Store name",
-            "fr": "Nom du magasin",
-            "de": "Name des Markts",
-            "es": "Nombre de la tienda"
+            "en": "Shop name",
+            "fr": "Nom du commerce",
+            "de": "Name des Geschäfts",
+            "es": "Nombre del comercio"
           }
         },
         {
@@ -240,26 +229,39 @@
     {
       "key": "store_closing_soon",
       "label": {
-        "en": "The store closes soon",
-        "fr": "Le magasin ferme bientôt",
-        "de": "Der Markt schließt bald",
-        "es": "La tienda cierra pronto"
+        "en": "A shop closes soon",
+        "fr": "Un commerce ferme bientôt",
+        "de": "Ein Geschäft schließt bald",
+        "es": "Un comercio cierra pronto"
       },
       "description": {
-        "en": "The store closes within the configured notice.",
-        "fr": "Le magasin ferme dans le délai de préavis configuré.",
-        "de": "Der Markt schließt innerhalb des eingestellten Vorlaufs.",
-        "es": "La tienda cierra dentro del aviso configurado."
+        "en": "A shop closes within the configured notice.",
+        "fr": "Un commerce ferme dans le délai de préavis configuré.",
+        "de": "Ein Geschäft schließt innerhalb des eingestellten Vorlaufs.",
+        "es": "Un comercio cierra dentro del aviso configurado."
       },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Store",
+            "fr": "Commerce",
+            "de": "Geschäft",
+            "es": "Comercio"
+          }
+        }
+      ],
       "variables": [
         {
           "key": "store_name",
           "type": "string",
           "label": {
-            "en": "Store name",
-            "fr": "Nom du magasin",
-            "de": "Name des Markts",
-            "es": "Nombre de la tienda"
+            "en": "Shop name",
+            "fr": "Nom du commerce",
+            "de": "Name des Geschäfts",
+            "es": "Nombre del comercio"
           }
         },
         {
@@ -289,10 +291,10 @@
     {
       "key": "is_store_open",
       "label": {
-        "en": "Is the store open?",
-        "fr": "Le magasin est-il ouvert ?",
-        "de": "Ist der Markt geöffnet?",
-        "es": "¿Está abierta la tienda?"
+        "en": "Is a shop open?",
+        "fr": "Un commerce est-il ouvert ?",
+        "de": "Ist ein Geschäft geöffnet?",
+        "es": "¿Está abierto un comercio?"
       },
       "description": {
         "en": "Open now, and the time it opens or closes next.",
@@ -301,6 +303,20 @@
         "es": "Abierta ahora, y la hora de la próxima apertura o cierre."
       },
       "timeout_seconds": 5,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Store",
+            "fr": "Commerce",
+            "de": "Geschäft",
+            "es": "Comercio"
+          },
+          "required": true
+        }
+      ],
       "outputs": [
         {
           "key": "open",
@@ -309,7 +325,7 @@
             "en": "Open",
             "fr": "Ouvert",
             "de": "Geöffnet",
-            "es": "Abierta"
+            "es": "Abierto"
           }
         },
         {
@@ -426,18 +442,32 @@
     {
       "key": "store_hours",
       "label": {
-        "en": "Store hours",
-        "fr": "Horaires du magasin",
+        "en": "Shop hours",
+        "fr": "Horaires des commerces",
         "de": "Öffnungszeiten",
-        "es": "Horario de la tienda"
+        "es": "Horario de comercios"
       },
       "description": {
-        "en": "Open or closed, until when, and today's hours.",
-        "fr": "Ouvert ou fermé, jusqu'à quand, et les horaires du jour.",
-        "de": "Geöffnet oder geschlossen, bis wann, und die heutigen Zeiten.",
-        "es": "Abierta o cerrada, hasta cuándo, y el horario de hoy."
+        "en": "Which shops are open and until when, or one shop in detail.",
+        "fr": "Quels commerces sont ouverts et jusqu'à quand, ou un commerce en détail.",
+        "de": "Welche Geschäfte geöffnet sind und bis wann, oder ein Geschäft im Detail.",
+        "es": "Qué comercios están abiertos y hasta cuándo, o un comercio en detalle."
       },
-      "icon": "shopping-cart"
+      "icon": "shopping-bag",
+      "settings": [
+        {
+          "key": "store",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Shop (empty: all)",
+            "fr": "Commerce (vide : tous)",
+            "de": "Geschäft (leer: alle)",
+            "es": "Comercio (vacío: todos)"
+          },
+          "required": false
+        }
+      ]
     },
     {
       "key": "loyalty_card",

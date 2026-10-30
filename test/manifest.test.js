@@ -13,20 +13,27 @@ import { ACTIONS } from '../src/capabilities/actions.js';
 import { BALANCE_MODES, SCENE_ACTIONS, SCENE_TRIGGERS } from '../src/capabilities/scenes.js';
 import { CARD_WIDGET_ACTIONS, WIDGET_KEYS } from '../src/capabilities/widgets.js';
 import { MAX_BALANCE } from '../src/devices/index.js';
-import { parseCards } from '../src/leclerc/cards.js';
+import { parseCards } from '../src/shops/cards.js';
+import { parseStores } from '../src/shops/stores.js';
 import { LANGUAGES } from '../src/i18n.js';
 
 const read = async (path) => readFile(new URL(path, import.meta.url), 'utf8');
 const manifest = JSON.parse(await read('../gladys-assistant-integration.json'));
 const pkg = JSON.parse(await read('../package.json'));
 
-test('version and image tag agree with package.json', () => {
+test('version, image and cover agree with package.json and with each other', () => {
+  // The repository is named once, by the image: renaming it means replacing
+  // `<owner>/<repo>` in the manifest, package.json and the docs links.
+  const [, owner, repo, tag] = /^ghcr\.io\/([^/]+)\/([^:]+):(.+)$/.exec(manifest.docker_image);
+  assert.equal(tag, pkg.version);
   assert.equal(manifest.version, pkg.version);
-  assert.equal(manifest.docker_image, `ghcr.io/prohand/gladys-eleclerc:${pkg.version}`);
-  assert.match(
+  assert.equal(pkg.name, repo);
+  assert.ok(
+    manifest.cover_image.startsWith(`https://raw.githubusercontent.com/${owner}/${repo}/`),
     manifest.cover_image,
-    /^https:\/\/raw\.githubusercontent\.com\/prohand\/gladys-eleclerc\//,
   );
+  const docs = manifest.config_schema[0].links.find((link) => link.url.includes('/docs/'));
+  assert.ok(docs.url.startsWith(`https://github.com/${owner}/${repo}/`), docs.url);
 });
 
 test('a local integration, for France, on Gladys 5.3 or later', () => {
@@ -74,13 +81,28 @@ test('every stored config key has its default and bounds in the code', () => {
   }
 });
 
-test('the example card numbers of the placeholder are valid', () => {
-  const field = manifest.config_schema.find((f) => f.key === 'loyalty_cards');
+/** A placeholder without its "e.g." in front. */
+const example = (field, language) =>
+  field.placeholder[language].replace(/^(e\.g\.|ex\.|z\. B\.|p\. ej\.)\s+/, '');
+
+test('the examples of the placeholders are read as they are meant', () => {
+  const stores = manifest.config_schema.find((f) => f.key === 'stores');
+  const cards = manifest.config_schema.find((f) => f.key === 'loyalty_cards');
   for (const language of LANGUAGES) {
-    const example = field.placeholder[language].replace(/^\S+\s+/, '');
-    const { cards, errors } = parseCards(example);
-    assert.deepEqual(errors, [], language);
-    assert.equal(cards.length, 2, language);
+    const parsed = parseStores(example(stores, language));
+    assert.deepEqual(parsed.errors, [], language);
+    assert.equal(parsed.stores.length, 2, language);
+    assert.ok(
+      parsed.stores.every((store) => store.schedule),
+      language,
+    );
+    const read = parseCards(example(cards, language));
+    assert.deepEqual(read.errors, [], language);
+    assert.deepEqual(
+      read.cards.map((card) => card.name),
+      ['Leclerc Marie', 'Carrefour'],
+      language,
+    );
   }
 });
 
@@ -191,5 +213,12 @@ test('the user documentation exists in the four languages', async () => {
       assert.ok(text.includes(key), `docs/${language}.md does not name ${key}`);
     }
     assert.ok(!/rappel ?conso/i.test(text), `docs/${language}.md still talks about recalls`);
+    // The examples of the docs are read as they are written.
+    const [stores, cards] = [...text.matchAll(/```\n(.+)\n```/g)].map((match) => match[1]);
+    const parsedStores = parseStores(stores);
+    assert.deepEqual(parsedStores.errors, [], `docs/${language}.md stores example`);
+    assert.equal(parsedStores.stores.filter((store) => store.schedule).length, 3, language);
+    assert.deepEqual(parseCards(cards).errors, [], `docs/${language}.md cards example`);
+    assert.equal(parseCards(cards).cards.length, 2, language);
   }
 });

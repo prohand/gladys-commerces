@@ -1,9 +1,9 @@
 // -----------------------------------------------------------------------------
-// Opening hours of the store, computed locally.
+// Opening hours of a store, computed locally.
 //
-// E.Leclerc publishes no API for the hours of its stores, so the user types
-// them, in the OpenStreetMap `opening_hours` syntax — the one the store's map
-// page usually already carries, e.g. `Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off`.
+// Shops publish no common API for their hours, so the user types them, in the
+// OpenStreetMap `opening_hours` syntax — the one a shop's map page usually
+// already carries, e.g. `Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off`.
 // The common subset is supported:
 //
 //   - days `Mo Tu We Th Fr Sa Su`, ranges (`Mo-Sa`) and lists (`Mo,We,Fr-Su`);

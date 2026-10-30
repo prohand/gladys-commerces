@@ -1,14 +1,13 @@
 // -----------------------------------------------------------------------------
 // The devices of the integration.
 //
-//   - the STORE: is it open (a read-only switch, 1 = open), and the minutes
-//     until it opens or closes — computed locally from the opening hours;
+//   - one device per STORE: is it open (a read-only switch, 1 = open), and
+//     the minutes until it opens or closes — computed from its hours;
 //   - one device per LOYALTY CARD: its balance in euros, set by the user.
 //
 // The external ids are forever (Gladys keys devices, history, scenes and
-// dashboards on them): there is one store per integration, so its platform id
-// is a fixed word; a card is identified by its number, never by the name the
-// user gives it.
+// dashboards on them): a store is identified by the slug of its name (see
+// storeSlug), a card by its number, never by the name the user gives it.
 // -----------------------------------------------------------------------------
 
 import {
@@ -24,8 +23,8 @@ export const FEATURES = {
   BALANCE: 'balance',
 };
 
-export function storeIds(gladys) {
-  return gladys.externalIds('store', 'main');
+export function storeIds(gladys, storeId) {
+  return gladys.externalIds('store', storeId);
 }
 
 export function cardIds(gladys, number) {
@@ -35,10 +34,10 @@ export function cardIds(gladys, number) {
 /** Upper bound of the "minutes until" feature: the week and a day looked ahead. */
 const MAX_MINUTES = 8 * 24 * 60;
 
-export function buildStoreDevice(gladys, config) {
-  const ids = storeIds(gladys);
+export function buildStoreDevice(gladys, store) {
+  const ids = storeIds(gladys, store.id);
   return {
-    name: config.store_name,
+    name: store.name,
     external_id: ids.device,
     features: [
       {
@@ -76,7 +75,7 @@ export const MAX_BALANCE = 100000;
 export function buildCardDevice(gladys, card) {
   const ids = cardIds(gladys, card.number);
   return {
-    name: `E.Leclerc card ${card.name}`,
+    name: card.name,
     external_id: ids.device,
     features: [
       {
@@ -99,9 +98,12 @@ export function buildCardDevice(gladys, card) {
 
 /**
  * @param {object} gladys
- * @param {object} config normalized configuration
+ * @param {Array<{ id: string, name: string }>} stores the stores of the watcher
  * @param {Array<{ number: string, name: string }>} cards the cards of the wallet
  */
-export function buildDiscoveredDevices(gladys, config, cards = []) {
-  return [buildStoreDevice(gladys, config), ...cards.map((card) => buildCardDevice(gladys, card))];
+export function buildDiscoveredDevices(gladys, stores = [], cards = []) {
+  return [
+    ...stores.map((store) => buildStoreDevice(gladys, store)),
+    ...cards.map((card) => buildCardDevice(gladys, card)),
+  ];
 }

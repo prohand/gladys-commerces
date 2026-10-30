@@ -5,21 +5,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## What this is
 
 A Gladys Assistant **external integration** (Node 22+, ESM, no build step, one runtime
-dependency: `@gladysassistant/integration-sdk`) for **E.Leclerc**: the opening hours of the
-user's store, and the user's loyalty cards (barcode on the dashboard, balance entered by
-hand). Requires Gladys 5.3+. Manifest tags: `transports: ["local"]` (nothing leaves the
-container), `countries: ["FR"]`. Started from the official JavaScript template.
+dependency: `@gladysassistant/integration-sdk`) for the **shops** a household goes to: the
+opening hours of several shops, and loyalty cards of any brand (barcode on the dashboard,
+balance entered by hand). Requires Gladys 5.3+. Manifest tags: `transports: ["local"]`
+(nothing leaves the container), `countries: ["FR"]` (French public holidays). Started from
+the official JavaScript template.
 
-Out of scope: product recalls (separate RappelConso integration) and anything behind an
-E.Leclerc login (Drive, automatic card balance): no public API, and the integration never
-asks for the customer's password.
+The repository is still named `gladys-eleclerc` (it started as an E.Leclerc integration);
+the README's "Renaming" section lists what a rename touches.
+
+Out of scope: product recalls (an existing RappelConso integration covers them) and
+anything behind a retailer login (drive orders, automatic card balance): no public API, and
+the integration never asks for a customer's password.
 
 ## Commands
 
 ```bash
 npm install
 npm test                                    # node --test (built-in runner)
-node --test test/hours.test.js              # one file
+node --test test/stores.test.js             # one file
 node --test --test-name-pattern "barcode"   # tests whose name matches
 npm run lint                                # eslint .
 npm run format:check                        # prettier --check . (CI gate)
@@ -33,28 +37,33 @@ admission checks and a Docker build. Releases: **Actions → Release** only (bum
 ## Architecture
 
 ```
-index.js                  SDK bootstrap only
-src/app.js                every handler wired on the SDK (createApp, tested end to end)
-src/config.js             DEFAULT_CONFIG (= manifest defaults), LIMITS, normalizeConfig
-src/i18n.js               LANGUAGES (en, fr, de, es), localize, pick
-src/devices/index.js      the store device, one device per loyalty card
-src/leclerc/hours.js      opening_hours parser, French holidays, storeStatus
-src/leclerc/store.js      per-minute state, store_opening_soon / store_closing_soon
-src/leclerc/cards.js      parseCards, Wallet (balances in /data/cards.json)
-src/leclerc/barcode.js    EAN-13 / Code 128 modules, barcodePng
-src/leclerc/png.js        minimal grayscale PNG writer (own CRC-32)
-src/capabilities/         actions, scenes, widgets
+index.js                SDK bootstrap only
+src/app.js              every handler wired on the SDK (createApp, tested end to end)
+src/config.js           DEFAULT_CONFIG (= manifest defaults), LIMITS, normalizeConfig
+src/i18n.js             LANGUAGES (en, fr, de, es), localize, pick
+src/devices/index.js    one device per shop, one per loyalty card
+src/shops/hours.js      opening_hours parser, French holidays, storeStatus
+src/shops/stores.js     parseStores, StoreWatcher (per-minute state, opening/closing soon)
+src/shops/cards.js      parseCards, Wallet (balances in /data/cards.json)
+src/shops/barcode.js    EAN-13 / Code 128 modules, barcodePng
+src/shops/png.js        minimal grayscale PNG writer (own CRC-32)
+src/capabilities/       actions, scenes, widgets
 ```
 
 ### Invariants worth knowing
 
-- **Keys are forever**: external ids (`store:main`, `card:<number>` + feature keys), config
-  keys, action / trigger / scene action / widget keys and `mode` values are stored by users.
-  Never rename them. A card is keyed by its number, never by the name the user gives it.
+- **Keys are forever**: external ids (`store:<slug of the name>`, `card:<number>` + feature
+  keys), config keys, action / trigger / scene action / widget keys and `mode` values are
+  stored by users. Never rename them, never change `storeSlug`.
+- **Config syntax**: shops `Name = hours | Name = hours` (`|` and `=` never appear in the
+  supported opening_hours subset), cards `Name=number; Name=number`. The examples of the
+  manifest placeholders and of the docs are parsed by the tests.
 - **Hours are on the Europe/Paris clock**, whatever the container clock (UTC).
 - **Opening state is a read-only switch**: on an `opening-sensor`, Gladys reads 1 as closed.
 - **The balance feature is read-only**: it is set through the widget form or the
   `set_loyalty_balance` scene action, never as a device command. It never goes below 0.
+- **Triggers fire once per change and never on a store's first tick**; the per-store
+  memory survives a new configuration.
 - **Barcode tables**: `test/barcode.test.js` holds reference modules drawn by
   python-barcode, and checks the structure of every Code 128 symbol. Never edit the
   tables without those tests.
@@ -68,8 +77,8 @@ src/capabilities/         actions, scenes, widgets
 ### Manifest
 
 `test/manifest.test.js` ties `gladys-assistant-integration.json` to the code (defaults and
-bounds, actions, triggers and their data, scene actions, widgets, placeholder examples) and
-checks that every text has `en`, `fr`, `de` and `es`.
+bounds, actions, triggers and their data, scene actions, widgets, placeholder and docs
+examples, repository name) and checks that every text has `en`, `fr`, `de` and `es`.
 
 ## Conventions
 

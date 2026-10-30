@@ -1,9 +1,17 @@
 // -----------------------------------------------------------------------------
-// The store watcher: once a minute, is the store open, and when does that
-// change? It publishes the two features of the store device and fires the
-// "opens soon" / "closes soon" scene triggers.
+// The stores and their opening hours.
 //
-// Nothing here goes on the network: the hours are the ones the user typed.
+// The user lists the shops they go to — supermarket, pharmacy, bakery, waste
+// collection centre — with their hours in the OpenStreetMap syntax:
+//
+//   Supermarket = Mo-Sa 08:30-20:00; PH off | Pharmacy = Mo-Fr 09:00-19:00
+//
+// Stores are separated by `|` (or a line break), the name comes before `=`.
+// `|` and `=` never appear in the opening_hours subset read by hours.js.
+//
+// Once a minute the watcher publishes, for each store, whether it is open and
+// the minutes until that changes, and fires the "opens soon" / "closes soon"
+// scene triggers once per change. Nothing goes on the network.
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
@@ -12,15 +20,74 @@ import { FEATURES, storeIds } from '../devices/index.js';
 import { localize, pick } from '../i18n.js';
 import { formatRanges, parseOpeningHours, storeStatus } from './hours.js';
 
-const logger = createLogger({ name: 'store' });
+const logger = createLogger({ name: 'stores' });
 
 const TICK_MS = 60_000;
+
+/** At most this many stores: the ones a household goes to. */
+export const MAX_STORES = 10;
 
 /** Scene trigger keys, as declared in the manifest: never renamed. */
 export const STORE_TRIGGERS = {
   OPENING_SOON: 'store_opening_soon',
   CLOSING_SOON: 'store_closing_soon',
 };
+
+/**
+ * The id of a store, part of its external id: its name in lower case, without
+ * accents, words joined by dashes. Renaming a store makes it a new device.
+ */
+export function storeSlug(name) {
+  return String(name ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+/**
+ * Read the stores of the configuration.
+ * @param {string} text
+ * @returns {{
+ *   stores: Array<{ id: string, name: string, hours: string, schedule: object|null, error: Error|null }>,
+ *   errors: string[]
+ * }} a store whose hours cannot be read is kept, with its error: the screens
+ *   say what is wrong with it
+ */
+export function parseStores(text) {
+  const stores = [];
+  const errors = [];
+  for (const entry of String(text ?? '')
+    .split(/[|\n]/)
+    .map((part) => part.trim())
+    .filter(Boolean)) {
+    const separator = entry.indexOf('=');
+    const name = separator === -1 ? '' : entry.slice(0, separator).trim();
+    const hours = separator === -1 ? '' : entry.slice(separator + 1).trim();
+    const id = storeSlug(name);
+    if (!id || !hours) {
+      errors.push(entry);
+      continue;
+    }
+    if (stores.some((store) => store.id === id)) {
+      continue;
+    }
+    let schedule = null;
+    let error = null;
+    try {
+      schedule = parseOpeningHours(hours);
+    } catch (err) {
+      error = err;
+    }
+    stores.push({ id, name, hours, schedule, error });
+  }
+  if (stores.length > MAX_STORES) {
+    errors.push(...stores.splice(MAX_STORES).map((store) => store.name));
+  }
+  return { stores, errors };
+}
 
 export class StoreWatcher {
   /**
@@ -32,40 +99,54 @@ export class StoreWatcher {
     this.gladys = gladys;
     this.now = now;
     this.config = null;
-    this.schedule = null;
-    this.error = null;
+    this.stores = [];
+    this.errors = [];
     this.timer = null;
-    // The next change already announced, so a trigger fires once per change.
-    this.announced = null;
-    this.primed = false;
-    this.lastOpen = null;
+    // Per store id, what the last ticks saw: survives a new configuration, so
+    // saving the form does not announce again a change already announced.
+    this.memory = new Map();
   }
 
-  /** Read the hours of a (new) configuration. */
+  /** Read the stores of a (new) configuration. */
   configure(config) {
     this.config = config;
-    try {
-      this.schedule = parseOpeningHours(config.opening_hours);
-      this.error = null;
-    } catch (err) {
-      this.schedule = null;
-      this.error = err;
-      logger.warn(`Opening hours not understood: ${err.message}`);
+    ({ stores: this.stores, errors: this.errors } = parseStores(config.stores));
+    for (const store of this.stores.filter((s) => s.error)) {
+      logger.warn(`Opening hours of "${store.name}" not understood: ${store.error.message}`);
+    }
+    for (const entry of this.errors) {
+      logger.warn(`Store not understood: "${entry}"`);
     }
   }
 
-  /** The status now, `null` while the hours cannot be read. */
-  status() {
-    return this.schedule ? storeStatus(this.schedule, this.now(), TIME_ZONE) : null;
+  /** The store of an id or of a device external id. */
+  find(idOrExternalId) {
+    return this.stores.find(
+      (store) =>
+        store.id === idOrExternalId || storeIds(this.gladys, store.id).device === idOrExternalId,
+    );
   }
 
-  /** Publish the features and fire the due trigger. */
+  /** A store's status now, `null` while its hours cannot be read. */
+  status(store) {
+    return store?.schedule ? storeStatus(store.schedule, this.now(), TIME_ZONE) : null;
+  }
+
+  /** Publish the features of every store and fire the due triggers. */
   async tick() {
-    const status = this.status();
+    for (const store of this.stores) {
+      await this.tickStore(store);
+    }
+  }
+
+  async tickStore(store) {
+    const status = this.status(store);
     if (!status) {
       return;
     }
-    const ids = storeIds(this.gladys);
+    const ids = storeIds(this.gladys, store.id);
+    const memory = this.memory.get(store.id) ?? { announced: null, primed: false, lastOpen: null };
+    this.memory.set(store.id, memory);
     await this.gladys.publishChangedStates(
       [
         { device_feature_external_id: ids.feature(FEATURES.OPEN), state: status.open ? 1 : 0 },
@@ -76,31 +157,32 @@ export class StoreWatcher {
       ],
       { heartbeat: 30 * 60_000 },
     );
-    if (this.lastOpen !== null && this.lastOpen !== status.open) {
+    if (memory.lastOpen !== null && memory.lastOpen !== status.open) {
       this.gladys.requestWidgetRefresh('store_hours');
     }
-    this.lastOpen = status.open;
+    memory.lastOpen = status.open;
 
     const { next } = status;
     const due = next && next.inMinutes > 0 && next.inMinutes <= this.config.notice_minutes;
-    const key = due ? `${next.open}@${Math.round(next.at.getTime() / 60_000)}` : null;
-    // The first tick after a start only takes note: a restart inside the
-    // notice window must not announce the same closing twice.
+    // The first tick of a store only takes note: a restart inside the notice
+    // window must not announce the same closing twice.
     if (due) {
-      if (this.primed && key !== this.announced) {
+      const key = `${next.open}@${Math.round(next.at.getTime() / 60_000)}`;
+      if (memory.primed && key !== memory.announced) {
         const trigger = next.open ? STORE_TRIGGERS.OPENING_SOON : STORE_TRIGGERS.CLOSING_SOON;
-        logger.info(`${trigger}: ${next.time}, in ${next.inMinutes} min`);
+        logger.info(`${trigger} ${store.name}: ${next.time}, in ${next.inMinutes} min`);
         await this.gladys
           .publishSceneEvent(trigger, {
-            store_name: this.config.store_name,
+            device: ids.device,
+            store_name: store.name,
             time: next.time,
             minutes_left: next.inMinutes,
           })
           .catch((err) => logger.error(`Could not fire ${trigger}`, err));
       }
-      this.announced = key;
+      memory.announced = key;
     }
-    this.primed = true;
+    memory.primed = true;
   }
 
   start() {
