@@ -78,7 +78,7 @@ test('the known balances are published again at start', async () => {
 });
 
 test('the file storage survives a restart; a missing file is empty', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'eleclerc-'));
+  const directory = await mkdtemp(join(tmpdir(), 'commerces-'));
   const storage = fileStorage(directory);
   assert.deepEqual(await storage.load(), {});
   await storage.save({ [MARIE]: { balance: 3 } });

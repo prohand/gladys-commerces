@@ -1,4 +1,4 @@
-# Shops — Gladys Assistant integration
+# Commerces — Gladys Assistant integration
 
 External integration bringing two things about the shops you go to into
 [Gladys Assistant](https://gladysassistant.com):
@@ -98,14 +98,6 @@ npm run format:check
 CI (`.github/workflows/ci.yml`) runs Prettier, ESLint and the tests on Node 22 and
 24, and on pull requests the store admission checks and a Docker build. The barcode
 tests compare the modules with reference ones drawn by the python-barcode library.
-
-## Renaming
-
-The repository is still named `gladys-eleclerc`. To rename it, rename the GitHub
-repository, then replace `gladys-eleclerc` in `package.json` (`name`), the manifest
-(`docker_image`, `cover_image`, documentation link), `SECURITY.md` and
-`CHANGELOG.md`, and pick the manifest `name`. `test/manifest.test.js` checks that
-the package name, the image and the links agree.
 
 ## Release
 

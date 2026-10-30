@@ -11,8 +11,9 @@ balance entered by hand). Requires Gladys 5.3+. Manifest tags: `transports: ["lo
 (nothing leaves the container), `countries: ["FR"]` (French public holidays). Started from
 the official JavaScript template.
 
-The repository is still named `gladys-eleclerc` (it started as an E.Leclerc integration);
-the README's "Renaming" section lists what a rename touches.
+Repository: `prohand/gladys-commerces` (formerly `gladys-eleclerc`: it started as an
+E.Leclerc integration). The package name, the image and the links of the manifest name it
+once each; `test/manifest.test.js` checks that they agree.
 
 Out of scope: product recalls (an existing RappelConso integration covers them) and
 anything behind a retailer login (drive orders, automatic card balance): no public API, and
