@@ -166,6 +166,22 @@ test('network down: the hours found stay, the others wait an hour', async () => 
   assert.equal(finder.get('pharmacie').name, 'Pharmacie Centrale');
 });
 
+test('asked during a lookup that fails: no second query at once', async () => {
+  const { finder, fetch } = finderSetup();
+  fetch.down = true;
+  await Promise.all([
+    finder.refresh({ searches: ['leclerc'], radiusKm: 10 }),
+    finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true }),
+  ]);
+  assert.equal(fetch.queries.length, 1);
+  assert.equal(finder.status.state, 'unreachable');
+  // Asked again later, by the user: no wait.
+  fetch.down = false;
+  await finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true });
+  assert.equal(fetch.queries.length, 2);
+  assert.equal(finder.get('leclerc').name, 'E.Leclerc');
+});
+
 test('no located house, or no access to the houses: nothing is asked', async () => {
   const unlocated = finderSetup({ houses: [{ ...HOUSES[0], latitude: null, longitude: null }] });
   await unlocated.finder.refresh({ searches: ['leclerc'], radiusKm: 10 });
