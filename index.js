@@ -1,6 +1,5 @@
 // -----------------------------------------------------------------------------
-// Entry point of the shops integration for Gladys Assistant: store hours and
-// loyalty cards.
+// Entry point of the shops integration for Gladys Assistant: store hours.
 //
 // The SDK reads GLADYS_HOST_API_URL, GLADYS_INTEGRATION_TOKEN and
 // GLADYS_INTEGRATION_SELECTOR, set by the Gladys supervisor on the container.

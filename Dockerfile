@@ -26,7 +26,7 @@ COPY index.js ./
 COPY src ./src
 COPY gladys-assistant-integration.json ./
 
-# The only writable location: the balances of the loyalty cards live there.
+# The only writable location: the hours found on OpenStreetMap live there.
 # Owned by `node`, and before VOLUME (changes after it are discarded).
 ENV NODE_ENV=production
 RUN mkdir -p /data && chown node:node /data

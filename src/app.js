@@ -9,8 +9,7 @@ import { normalizeConfig } from './config.js';
 import { buildDiscoveredDevices } from './devices/index.js';
 import { actionHandlers } from './capabilities/actions.js';
 import { SCENE_ACTIONS, sceneActionHandlers } from './capabilities/scenes.js';
-import { cardImage, WIDGET_KEYS, widgetHandlers } from './capabilities/widgets.js';
-import { Wallet } from './shops/cards.js';
+import { WIDGET_KEYS, widgetHandlers } from './capabilities/widgets.js';
 import { HoursFinder, RETRY_MS } from './shops/finder.js';
 import { StoreWatcher } from './shops/stores.js';
 
@@ -19,7 +18,6 @@ const logger = createLogger({ name: 'app' });
 /**
  * @param {object} gladys a GladysIntegration (or the fake one of the tests)
  * @param {object} [deps] replacements for the tests
- * @param {object} [deps.storage] storage of the card balances
  * @param {object} [deps.hoursCache] storage of the hours found on OpenStreetMap
  * @param {typeof fetch} [deps.fetch] the network, for the OpenStreetMap lookups
  * @param {() => Date} [deps.now] clock
@@ -34,7 +32,6 @@ export function createApp(gladys, deps = {}) {
     ...(deps.hoursCache && { cache: deps.hoursCache }),
   });
   const watcher = new StoreWatcher({ gladys, now, finder });
-  const wallet = new Wallet({ gladys, now, ...(deps.storage && { storage: deps.storage }) });
   let config = null;
   let lookupTimer = null;
 
@@ -42,7 +39,6 @@ export function createApp(gladys, deps = {}) {
     config = normalizeConfig(raw);
     watcher.configure(config);
     watcher.setDevices(gladys.devices);
-    wallet.configure(config);
     return config;
   }
   configure(gladys.config ?? {});
@@ -76,12 +72,11 @@ export function createApp(gladys, deps = {}) {
     }
   }
 
-  const devices = () => buildDiscoveredDevices(gladys, watcher.stores, wallet.cards, finder.nearby);
+  const devices = () => buildDiscoveredDevices(gladys, watcher.stores, finder.nearby);
 
   /** (Re)start the stores clock and publish what is known. */
   async function run() {
     await (timers ? watcher.start() : watcher.tick());
-    await wallet.publishAll();
   }
 
   /** Look the `auto` stores up now if needed, then every hour. */
@@ -109,7 +104,6 @@ export function createApp(gladys, deps = {}) {
       device,
     ]);
     await watcher.tick();
-    await wallet.publishAll();
   });
 
   gladys.onDeviceUpdated(async (device) => {
@@ -125,7 +119,6 @@ export function createApp(gladys, deps = {}) {
 
   const actions = actionHandlers({
     watcher,
-    wallet,
     finder,
     config: () => config,
     findHours: () => findHours({ force: true }),
@@ -134,20 +127,16 @@ export function createApp(gladys, deps = {}) {
     gladys.onAction(key, handler);
   }
 
-  const sceneActions = sceneActionHandlers({ watcher, wallet });
+  const sceneActions = sceneActionHandlers({ watcher });
   gladys.onSceneAction(SCENE_ACTIONS.is_store_open, sceneActions.is_store_open);
-  gladys.onSceneAction(SCENE_ACTIONS.set_loyalty_balance, sceneActions.set_loyalty_balance);
 
-  const widgets = widgetHandlers({ watcher, wallet });
+  const widgets = widgetHandlers({ watcher });
   gladys.onWidgetGet(WIDGET_KEYS.STORE_HOURS, widgets.store_hours.get);
-  gladys.onWidgetGet(WIDGET_KEYS.LOYALTY_CARD, widgets.loyalty_card.get);
-  gladys.onWidgetAction(WIDGET_KEYS.LOYALTY_CARD, widgets.loyalty_card.action);
-  gladys.onWidgetGetImage(async (imageKey) => cardImage(wallet, imageKey));
 
   gladys.onConfigUpdated(async (raw) => {
     logger.info('Configuration updated');
     configure(raw);
-    // The stores and the cards are devices: publish them again (an upsert).
+    // The stores are devices: publish them again (an upsert).
     await gladys.publishDiscoveredDevices(devices());
     await run();
     for (const key of Object.values(WIDGET_KEYS)) {
@@ -185,5 +174,5 @@ export function createApp(gladys, deps = {}) {
   }
   gladys.on('disconnected', stop);
 
-  return { watcher, wallet, finder, stop };
+  return { watcher, finder, stop };
 }

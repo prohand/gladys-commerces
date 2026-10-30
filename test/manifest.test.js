@@ -10,10 +10,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { DEFAULT_CONFIG, LIMITS } from '../src/config.js';
 import { ACTIONS } from '../src/capabilities/actions.js';
-import { BALANCE_MODES, SCENE_ACTIONS, SCENE_TRIGGERS } from '../src/capabilities/scenes.js';
-import { CARD_WIDGET_ACTIONS, WIDGET_KEYS } from '../src/capabilities/widgets.js';
-import { MAX_BALANCE } from '../src/devices/index.js';
-import { parseCards } from '../src/shops/cards.js';
+import { SCENE_ACTIONS, SCENE_TRIGGERS } from '../src/capabilities/scenes.js';
+import { WIDGET_KEYS } from '../src/capabilities/widgets.js';
 import { SHOP_KINDS } from '../src/shops/finder.js';
 import { parseStores } from '../src/shops/stores.js';
 import { LANGUAGES } from '../src/i18n.js';
@@ -90,7 +88,6 @@ const example = (field, language) =>
 
 test('the examples of the placeholders are read as they are meant', () => {
   const stores = manifest.config_schema.find((f) => f.key === 'stores');
-  const cards = manifest.config_schema.find((f) => f.key === 'loyalty_cards');
   for (const language of LANGUAGES) {
     const parsed = parseStores(example(stores, language));
     assert.deepEqual(parsed.errors, [], language);
@@ -101,13 +98,6 @@ test('the examples of the placeholders are read as they are meant', () => {
         [true, false],
         [false, true],
       ],
-      language,
-    );
-    const read = parseCards(example(cards, language));
-    assert.deepEqual(read.errors, [], language);
-    assert.deepEqual(
-      read.cards.map((card) => card.name),
-      ['Leclerc Marie', 'Carrefour'],
       language,
     );
   }
@@ -139,11 +129,6 @@ test('the scene actions are the ones the code handles', () => {
     manifest.scene_actions.map((action) => action.key).sort(),
     Object.values(SCENE_ACTIONS).sort(),
   );
-  const balance = manifest.scene_actions.find((a) => a.key === SCENE_ACTIONS.set_loyalty_balance);
-  const mode = balance.fields.find((f) => f.key === 'mode');
-  assert.deepEqual(mode.options.map((o) => o.value).sort(), Object.values(BALANCE_MODES).sort());
-  const amount = balance.fields.find((f) => f.key === 'amount');
-  assert.deepEqual([amount.min, amount.max], [-MAX_BALANCE, MAX_BALANCE]);
 });
 
 test('the widgets are the ones the code renders', () => {
@@ -151,7 +136,6 @@ test('the widgets are the ones the code renders', () => {
     manifest.widgets.map((widget) => widget.key).sort(),
     Object.values(WIDGET_KEYS).sort(),
   );
-  assert.deepEqual(Object.values(CARD_WIDGET_ACTIONS), ['set_balance']);
   for (const widget of manifest.widgets) {
     for (const language of LANGUAGES) {
       assert.ok(widget.label[language].length >= 3 && widget.label[language].length <= 30);
@@ -231,11 +215,10 @@ test('the user documentation exists in the four languages', async () => {
     }
     assert.ok(!/rappel ?conso/i.test(text), `docs/${language}.md still talks about recalls`);
     // The examples of the docs are read as they are written.
-    const [stores, cards] = [...text.matchAll(/```\n(.+)\n```/g)].map((match) => match[1]);
+    const [stores] = [...text.matchAll(/```\n(.+)\n```/g)].map((match) => match[1]);
     const parsedStores = parseStores(stores);
     assert.deepEqual(parsedStores.errors, [], `docs/${language}.md stores example`);
     assert.equal(parsedStores.stores.filter((store) => store.schedule).length, 3, language);
-    assert.deepEqual(parseCards(cards).errors, [], `docs/${language}.md cards example`);
-    assert.equal(parseCards(cards).cards.length, 2, language);
+    assert.ok(!/fidélité|loyalty|Kundenkarte|fidelidad/i.test(text), `docs/${language}.md: cards`);
   }
 });

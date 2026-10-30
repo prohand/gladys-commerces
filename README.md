@@ -1,14 +1,12 @@
 # Horaires Commerces — Gladys Assistant integration
 
-External integration bringing two things about the shops you go to into
-[Gladys Assistant](https://gladysassistant.com):
+External integration bringing the **opening hours** of the shops you go to into
+[Gladys Assistant](https://gladysassistant.com): which shops are open, and when that
+changes — supermarket, pharmacy, bakery, waste collection centre…
 
-- their **opening hours**: which shops are open, and when that changes — supermarket,
-  pharmacy, bakery, waste collection centre…;
-- your **loyalty cards**, of any brand: the barcode on the dashboard, to scan at the
-  till from a phone, and the balance.
-
-No account, no API key, nothing sent on the internet.
+Hours typed by the user, or found on OpenStreetMap through
+[overpass.ch](https://overpass.ch) with the user's own free key (the only network
+call).
 
 Built on the official
 [JavaScript integration template](https://github.com/GladysAssistant/integration-template-js)
@@ -22,23 +20,20 @@ User documentation: [English](./docs/en.md) · [Français](./docs/fr.md) ·
 
 ## What it does
 
-| Device       | Features                                                  | Source                  |
-| ------------ | --------------------------------------------------------- | ----------------------- |
-| One per shop | Open (read-only switch), minutes until it opens or closes | Hours typed by the user |
-| One per card | Balance (€), with history                                 | Entered by the user     |
+| Device       | Features                                                  | Source                                 |
+| ------------ | --------------------------------------------------------- | -------------------------------------- |
+| One per shop | Open (read-only switch), minutes until it opens or closes | Hours typed, or found on OpenStreetMap |
 
 Scenes (Gladys 5.1+, `src/capabilities/scenes.js`):
 
-| Kind    | Key                   | What                                                 |
-| ------- | --------------------- | ---------------------------------------------------- |
-| Trigger | `store_opening_soon`  | A shop opens within the configured notice            |
-| Trigger | `store_closing_soon`  | A shop closes within the configured notice           |
-| Action  | `is_store_open`       | Is this shop open? (outputs: open, next_change, …)   |
-| Action  | `set_loyalty_balance` | Set or add to a card's balance (output: the new one) |
+| Kind    | Key                  | What                                               |
+| ------- | -------------------- | -------------------------------------------------- |
+| Trigger | `store_opening_soon` | A shop opens within the configured notice          |
+| Trigger | `store_closing_soon` | A shop closes within the configured notice         |
+| Action  | `is_store_open`      | Is this shop open? (outputs: open, next_change, …) |
 
-Dashboard widgets (`src/capabilities/widgets.js`): **Shop hours** (every shop at a
-glance, or one in detail) and **Loyalty card** (barcode image, balance, form to
-update it).
+Dashboard widget (`src/capabilities/widgets.js`): **Shop hours** (every shop at a
+glance, or one in detail).
 
 Configuration-screen action: **Test the configuration**.
 
@@ -62,14 +57,6 @@ created are refreshed by id. It is the only network call, made only to
 `api.overpass.ch` with the user's own free key (the `overpass_ch_key` secret
 field): no key, no call, and the stores say why.
 
-**Loyalty cards.** Retailers offer no public API for their cards: reading a balance
-would take the customer's password and an unofficial interface, which this
-integration refuses to depend on. The user types the card numbers
-(`Name=number; ...`); `src/shops/barcode.js` draws each card's barcode — EAN-13 when
-the number is one, Code 128 otherwise — as a PNG (`src/shops/png.js`, no dependency)
-served through `onWidgetGetImage`. The balance is entered from the widget form or a
-scene action, kept in `/data/cards.json` and published as a Gladys currency feature.
-
 ## Project structure
 
 ```
@@ -79,18 +66,15 @@ scene action, kept in `/data/cards.json` and published as a Gladys currency feat
 │  ├─ app.js                     # every handler wired on the SDK (tested end to end)
 │  ├─ config.js                  # defaults (= manifest) + normalization
 │  ├─ i18n.js                    # languages of user-facing text (en, fr, de, es)
-│  ├─ devices/index.js           # the shop and loyalty card devices
+│  ├─ devices/index.js           # the shop devices
 │  ├─ shops/
 │  │  ├─ hours.js                #   opening_hours parser, French holidays, status
 │  │  ├─ stores.js               #   the shop list, per-minute state and triggers
-│  │  ├─ finder.js               #   hours and nearby shops from OpenStreetMap
-│  │  ├─ cards.js                #   card list, balances in /data
-│  │  ├─ barcode.js              #   EAN-13 and Code 128 modules, PNG
-│  │  └─ png.js                  #   minimal grayscale PNG writer
+│  │  └─ finder.js               #   hours and nearby shops from OpenStreetMap
 │  └─ capabilities/
 │     ├─ actions.js              #   Configuration-screen button
 │     ├─ scenes.js               #   scene triggers and actions
-│     └─ widgets.js              #   dashboard widgets
+│     └─ widgets.js              #   dashboard widget
 ├─ test/                         # node --test, SDK fake Gladys, no network
 ├─ docs/{en,fr,de,es}.md         # user documentation
 ├─ gladys-assistant-integration.json
@@ -108,8 +92,7 @@ npm run format:check
 ```
 
 CI (`.github/workflows/ci.yml`) runs Prettier, ESLint and the tests on Node 22 and
-24, and on pull requests the store admission checks and a Docker build. The barcode
-tests compare the modules with reference ones drawn by the python-barcode library.
+24, and on pull requests the store admission checks and a Docker build.
 
 ## Release
 

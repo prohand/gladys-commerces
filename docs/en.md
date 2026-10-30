@@ -1,13 +1,13 @@
 # Horaires Commerces — user guide
 
-This integration brings two things about the shops you go to into Gladys:
+This integration brings into Gladys the **opening hours** of the shops you go to:
+which shops are open, when they open or close, with scenes when a shop opens or
+closes soon.
 
-- their **opening hours**: which shops are open, and when they open or close;
-- your **loyalty cards**, of any brand: their barcode on the dashboard, to scan at
-  the till from your phone, and their balance.
-
-Everything is computed in Gladys: no account, no password. The only call out is to
-OpenStreetMap, to find the hours of shops around your houses (see below).
+Everything is computed in Gladys. The only call out is to OpenStreetMap, through the
+overpass.ch service and with your free key, to find the hours of shops around your
+houses (see **overpass.ch key** below). Without a key, type the hours of your shops
+yourself.
 
 ## Set up
 
@@ -16,16 +16,15 @@ Open **Integrations**, find the integration, install it, then fill in the
 
 | Field                   | What to put                                                                    |
 | ----------------------- | ------------------------------------------------------------------------------ |
-| Shops and opening hours | Your shops and their hours (see below). Leave empty if you only want cards.    |
+| overpass.ch key         | Your free key, to look up the hours on OpenStreetMap (see below).              |
+| Shops and opening hours | Your shops and their hours (see below).                                        |
 | Houses to search around | The Gladys houses to search around. None checked: every house with a location. |
 | Search radius ... (km)  | How far from a house the shops are looked for. Default: 10.                    |
 | Kinds of shops ...      | The kinds of shops offered in the Discovery tab. None checked: none.           |
-| overpass.ch key         | Your free key, to look up the hours on OpenStreetMap (see below).              |
 | Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.      |
-| Card numbers            | Your loyalty cards (see below). Leave empty if you have none.                  |
 
 Then click **Test the configuration**: the answer says, shop by shop, whether it is
-open, and which cards were understood.
+open.
 
 Finally, open the **Discovery** tab of the integration and create the devices.
 
@@ -114,29 +113,12 @@ refused or a monthly quota used up is told by **Test the configuration** and in 
 logs (`OpenStreetMap lookup failed: overpass.ch refused the key (403)`); the hours
 found before stay, and the lookup tries again within the hour.
 
-### Loyalty cards
-
-One card per entry: a name (brand, holder), `=`, then the number printed under the
-barcode of the card. Separate the cards with `;`:
-
-```
-Leclerc Marie=2900123456785; Carrefour=2900987654327
-```
-
-Spaces and dashes in the number are ignored; the name is optional. Up to 20 cards.
-
-**About the balance.** Shops offer no public API for their cards: a balance cannot be
-read automatically without your password, through an unofficial interface that can
-stop working at any time. The integration does not do that. You enter the balance
-yourself — from the widget, or from a scene — and Gladys keeps it, with its history.
-
 ## Devices
 
-| Device    | Feature                          | Notes                                     |
-| --------- | -------------------------------- | ----------------------------------------- |
-| Each shop | Open (1 = open, 0 = closed)      | Usable in any scene condition             |
-| Each shop | Minutes until it opens or closes | Updated every minute                      |
-| Each card | Balance (€)                      | Set by you; usable in any scene condition |
+| Device    | Feature                          | Notes                         |
+| --------- | -------------------------------- | ----------------------------- |
+| Each shop | Open (1 = open, 0 = closed)      | Usable in any scene condition |
+| Each shop | Minutes until it opens or closes | Updated every minute          |
 
 ## Scenes
 
@@ -147,27 +129,17 @@ yourself — from the widget, or from a scene — and Gladys keeps it, with its 
   the shop (empty = any). Variables: shop name, time, minutes left. Example: "The
   {{store_name}} closes at {{time}}, {{minutes_left}} minutes left."
 
-"The shop is open" and "the balance is above 10 €" are states: use the device
-conditions of Gladys.
+"The shop is open" is a state: use the device conditions of Gladys.
 
 ### Actions
 
 - **Is a shop open?** (`is_store_open`): choose a shop. Outputs: _open_ (yes/no), the
   time of the next change (HH:MM) and the minutes until then.
-- **Update a loyalty card balance** (`set_loyalty_balance`): choose a card, then _set
-  the balance to_ an amount, or _add to the balance_ (a negative amount to spend).
-  Output: the new balance. The balance never goes below 0.
 
 ## Dashboard
 
 - **Shop hours**: every shop at a glance (open or closed, until when), or — with the
   setting _Shop_ — one shop in detail, with a countdown and today's hours.
-- **Loyalty card**: the barcode of a card (setting _Card_; empty = the first one), its
-  balance and its number, and an **Update the balance** button. Show it at the till:
-  turn the brightness of your phone up for the scanner.
-
-The barcode is an EAN-13 when the card number is one (13 digits, valid check digit),
-a Code 128 otherwise. Both are read by till scanners.
 
 ## Troubleshooting
 
@@ -188,15 +160,8 @@ a Code 128 otherwise. Both are read by till scanners.
   the English day names (`Mo`, not `Lu`) and `HH:MM` times (`08:30`, not `8h30`).
 - **A shop is "not understood"**: each entry must be `Name = hours`, entries separated
   by `|`.
-- **A card is "not understood"**: the number must be 6 to 20 digits.
-- **The till does not read the barcode**: check the number, turn the brightness up,
-  and zoom on the widget. If your card has another kind of barcode, tell us in an
-  issue.
 
 ## Data
-
-The balances are kept in the integration's own `/data` volume (`cards.json`) and
-as Gladys states; they never leave your Gladys.
 
 To find the hours (shops written without hours, and the Discovery tab), the words
 looked for, the kinds of shops and the location of your houses (an area of the

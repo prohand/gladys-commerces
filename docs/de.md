@@ -1,33 +1,30 @@
 # Horaires Commerces — Benutzerhandbuch
 
-Diese Integration bringt zwei Dinge zu den Geschäften, in die Sie gehen, in Gladys:
+Diese Integration bringt die **Öffnungszeiten** der Geschäfte, in die Sie gehen, in
+Gladys: welche Geschäfte geöffnet sind, wann sie öffnen oder schließen, mit Szenen,
+wenn ein Geschäft bald öffnet oder schließt.
 
-- ihre **Öffnungszeiten**: welche Geschäfte geöffnet sind, wann sie öffnen oder
-  schließen;
-- Ihre **Kundenkarten** aller Marken: ihr Barcode auf dem Dashboard, zum Scannen an
-  der Kasse mit dem Handy, und ihr Guthaben.
-
-Alles wird in Gladys berechnet: kein Konto, kein Passwort. Der einzige Aufruf nach
-außen geht an OpenStreetMap, um die Zeiten der Geschäfte rund um Ihre Häuser zu
-finden (siehe unten).
+Alles wird in Gladys berechnet. Der einzige Aufruf nach außen geht an OpenStreetMap,
+über den Dienst overpass.ch und mit Ihrem kostenlosen Schlüssel, um die Zeiten der
+Geschäfte rund um Ihre Häuser zu finden (siehe **overpass.ch-Schlüssel** unten). Ohne
+Schlüssel geben Sie die Zeiten Ihrer Geschäfte selbst ein.
 
 ## Einrichtung
 
 Öffnen Sie **Integrationen**, suchen Sie die Integration, installieren Sie sie und
 füllen Sie dann den Bildschirm **Konfiguration** aus.
 
-| Feld                         | Was eintragen                                                                   |
-| ---------------------------- | ------------------------------------------------------------------------------- |
-| Geschäfte und Öffnungszeiten | Ihre Geschäfte und ihre Zeiten (siehe unten). Leer, wenn Sie nur Karten wollen. |
-| Häuser, um die gesucht wird  | Die Gladys-Häuser, um die gesucht wird. Keines angekreuzt: alle mit Standort.   |
-| Suchradius ... (km)          | Wie weit von einem Haus die Geschäfte gesucht werden. Standard: 10.             |
-| Arten von Geschäften ...     | Die im Reiter Erkennung angebotenen Arten. Keine angekreuzt: keine.             |
-| overpass.ch-Schlüssel        | Ihr kostenloser Schlüssel, um die Zeiten auf OpenStreetMap zu suchen (unten).   |
-| Vorlauf vor ... (Min.)       | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.            |
-| Kartennummern                | Ihre Kundenkarten (siehe unten). Leer lassen, wenn Sie keine haben.             |
+| Feld                         | Was eintragen                                                                 |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| overpass.ch-Schlüssel        | Ihr kostenloser Schlüssel, um die Zeiten auf OpenStreetMap zu suchen (unten). |
+| Geschäfte und Öffnungszeiten | Ihre Geschäfte und ihre Zeiten (siehe unten).                                 |
+| Häuser, um die gesucht wird  | Die Gladys-Häuser, um die gesucht wird. Keines angekreuzt: alle mit Standort. |
+| Suchradius ... (km)          | Wie weit von einem Haus die Geschäfte gesucht werden. Standard: 10.           |
+| Arten von Geschäften ...     | Die im Reiter Erkennung angebotenen Arten. Keine angekreuzt: keine.           |
+| Vorlauf vor ... (Min.)       | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.          |
 
 Klicken Sie dann auf **Konfiguration testen**: Die Antwort sagt Geschäft für Geschäft,
-ob es geöffnet ist, und welche Karten verstanden wurden.
+ob es geöffnet ist.
 
 Öffnen Sie zuletzt den Reiter **Erkennung** der Integration und legen Sie die Geräte an.
 
@@ -127,31 +124,12 @@ Monatskontingent wird von **Konfiguration testen** und in den Logs gemeldet
 (`OpenStreetMap lookup failed: overpass.ch refused the key (403)`); die schon
 gefundenen Zeiten bleiben, und die Suche versucht es innerhalb einer Stunde erneut.
 
-### Kundenkarten
-
-Eine Karte pro Eintrag: ein Name (Marke, Inhaber), `=`, dann die unter dem Barcode
-der Karte gedruckte Nummer. Trennen Sie die Karten mit `;`:
-
-```
-Leclerc Marie=2900123456785; Carrefour=2900987654327
-```
-
-Leerzeichen und Bindestriche in der Nummer werden ignoriert; der Name ist optional.
-Höchstens 20 Karten.
-
-**Zum Guthaben.** Die Händler bieten keine öffentliche API für ihre Karten: Ein
-Guthaben kann nicht automatisch gelesen werden, ohne Ihr Passwort über eine
-inoffizielle Schnittstelle, die jederzeit ausfallen kann. Die Integration tut das
-nicht. Sie geben das Guthaben selbst ein — im Widget oder in einer Szene — und Gladys
-speichert es mit seinem Verlauf.
-
 ## Geräte
 
-| Gerät          | Funktion                                 | Hinweise                                     |
-| -------------- | ---------------------------------------- | -------------------------------------------- |
-| Jedes Geschäft | Geöffnet (1 = geöffnet, 0 = geschlossen) | In jeder Szenenbedingung nutzbar             |
-| Jedes Geschäft | Minuten bis zur Öffnung oder Schließung  | Jede Minute aktualisiert                     |
-| Jede Karte     | Guthaben (€)                             | Von Ihnen eingegeben; in Bedingungen nutzbar |
+| Gerät          | Funktion                                 | Hinweise                         |
+| -------------- | ---------------------------------------- | -------------------------------- |
+| Jedes Geschäft | Geöffnet (1 = geöffnet, 0 = geschlossen) | In jeder Szenenbedingung nutzbar |
+| Jedes Geschäft | Minuten bis zur Öffnung oder Schließung  | Jede Minute aktualisiert         |
 
 ## Szenen
 
@@ -163,29 +141,20 @@ speichert es mit seinem Verlauf.
   verbleibende Minuten. Beispiel: „{{store_name}} schließt um {{time}}, noch
   {{minutes_left}} Minuten.“
 
-„Das Geschäft ist geöffnet“ und „das Guthaben liegt über 10 €“ sind Zustände: Nutzen
-Sie die Gerätebedingungen von Gladys.
+„Das Geschäft ist geöffnet“ ist ein Zustand: Nutzen Sie die Gerätebedingungen von
+Gladys.
 
 ### Aktionen
 
 - **Ist ein Geschäft geöffnet?** (`is_store_open`): Wählen Sie ein Geschäft. Ausgaben:
   _geöffnet_ (ja/nein), die Uhrzeit der nächsten Änderung (HH:MM) und die Minuten bis
   dahin.
-- **Guthaben einer Kundenkarte ändern** (`set_loyalty_balance`): Wählen Sie eine
-  Karte, dann _Guthaben setzen auf_ einen Betrag oder _zum Guthaben addieren_ (ein
-  negativer Betrag zum Ausgeben). Ausgabe: das neue Guthaben. Es fällt nie unter 0.
 
 ## Dashboard
 
 - **Öffnungszeiten**: alle Geschäfte auf einen Blick (geöffnet oder geschlossen, bis
   wann), oder — mit der Einstellung _Geschäft_ — ein Geschäft im Detail, mit
   Countdown und den heutigen Zeiten.
-- **Kundenkarte**: der Barcode einer Karte (Einstellung _Karte_; leer = die erste),
-  ihr Guthaben und ihre Nummer, und eine Schaltfläche **Guthaben aktualisieren**. An
-  der Kasse vorzeigen: Erhöhen Sie die Helligkeit des Handys für den Scanner.
-
-Der Barcode ist ein EAN-13, wenn die Kartennummer einer ist (13 Ziffern, gültige
-Prüfziffer), sonst ein Code 128. Kassenscanner lesen beide.
 
 ## Fehlerbehebung
 
@@ -207,15 +176,8 @@ Prüfziffer), sonst ein Code 128. Kassenscanner lesen beide.
   (`08:30`, nicht `8.30`).
 - **Ein Geschäft wird „nicht verstanden“**: Jeder Eintrag muss `Name = Zeiten` sein,
   Einträge durch `|` getrennt.
-- **Eine Karte wird „nicht verstanden“**: Die Nummer muss 6 bis 20 Ziffern haben.
-- **Die Kasse liest den Barcode nicht**: Prüfen Sie die Nummer, erhöhen Sie die
-  Helligkeit und zoomen Sie auf das Widget. Trägt Ihre Karte eine andere Barcode-Art,
-  melden Sie es in einem Issue.
 
 ## Daten
-
-Die Guthaben werden im Volume `/data` der Integration (`cards.json`) und als
-Gladys-Zustände gespeichert; sie verlassen Ihr Gladys nie.
 
 Um die Zeiten zu finden (ohne Zeiten eingetragene Geschäfte und Reiter Erkennung),
 werden die gesuchten Wörter, die Arten von Geschäften und der Standort Ihrer Häuser

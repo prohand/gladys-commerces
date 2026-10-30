@@ -1,14 +1,13 @@
 # Horaires Commerces — guía de uso
 
-Esta integración trae a Gladys dos cosas de los comercios a los que va:
+Esta integración trae a Gladys el **horario** de los comercios a los que va: qué
+comercios están abiertos, cuándo abren o cierran, con escenas cuando un comercio abre
+o cierra pronto.
 
-- su **horario**: qué comercios están abiertos, y cuándo abren o cierran;
-- sus **tarjetas de fidelidad**, de cualquier marca: su código de barras en el panel,
-  para escanearlo en caja desde el móvil, y su saldo.
-
-Todo se calcula en Gladys: sin cuenta, sin contraseña. La única llamada externa va
-a OpenStreetMap, para encontrar el horario de los comercios alrededor de sus casas
-(ver abajo).
+Todo se calcula en Gladys. La única llamada externa va a OpenStreetMap, a través del
+servicio overpass.ch y con su clave gratuita, para encontrar el horario de los
+comercios alrededor de sus casas (ver **Clave de overpass.ch** más abajo). Sin clave,
+escriba usted mismo el horario de sus comercios.
 
 ## Instalación
 
@@ -17,16 +16,15 @@ Abra **Integraciones**, busque la integración, instálela y rellene la pantalla
 
 | Campo                             | Qué poner                                                                                         |
 | --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Comercios y horario               | Sus comercios y su horario (ver abajo). Vacío si solo quiere las tarjetas.                        |
+| Clave de overpass.ch              | Su clave gratuita, para buscar el horario en OpenStreetMap (ver abajo).                           |
+| Comercios y horario               | Sus comercios y su horario (ver abajo).                                                           |
 | Casas alrededor de las que buscar | Las casas de Gladys alrededor de las que buscar. Ninguna marcada: todas las que tienen ubicación. |
 | Radio de búsqueda ... (km)        | A qué distancia de una casa se buscan los comercios. Por defecto: 10.                             |
 | Tipos de comercios ...            | Los tipos de comercios propuestos en la pestaña Descubrimiento. Ninguno marcado: ninguno.         |
-| Clave de overpass.ch              | Su clave gratuita, para buscar el horario en OpenStreetMap (ver abajo).                           |
 | Aviso antes de ... (min)          | Cuándo se activan «abre pronto» / «cierra pronto». Por defecto: 30 min.                           |
-| Números de tarjeta                | Sus tarjetas de fidelidad (ver abajo). Vacío si no tiene ninguna.                                 |
 
 Pulse después **Probar la configuración**: la respuesta dice, comercio por comercio,
-si está abierto, y qué tarjetas se han entendido.
+si está abierto.
 
 Por último, abra la pestaña **Descubrimiento** de la integración y cree los
 dispositivos.
@@ -120,31 +118,12 @@ indica en **Probar la configuración** y en los logs
 (`OpenStreetMap lookup failed: overpass.ch refused the key (403)`); el horario ya
 encontrado se mantiene, y la búsqueda vuelve a intentarlo en la próxima hora.
 
-### Tarjetas de fidelidad
-
-Una tarjeta por entrada: un nombre (marca, titular), `=`, y el número impreso bajo el
-código de barras de la tarjeta. Separe las tarjetas con `;`:
-
-```
-Leclerc Marie=2900123456785; Carrefour=2900987654327
-```
-
-Los espacios y guiones del número se ignoran; el nombre es opcional. 20 tarjetas como
-máximo.
-
-**Sobre el saldo.** Los comercios no ofrecen una API pública para sus tarjetas: un
-saldo no se puede leer automáticamente sin su contraseña, mediante una interfaz no
-oficial que puede dejar de funcionar en cualquier momento. La integración no lo hace.
-Usted introduce el saldo — desde el widget o una escena — y Gladys lo guarda, con su
-historial.
-
 ## Dispositivos
 
-| Dispositivo   | Función                            | Notas                                            |
-| ------------- | ---------------------------------- | ------------------------------------------------ |
-| Cada comercio | Abierto (1 = abierto, 0 = cerrado) | Utilizable en cualquier condición de escena      |
-| Cada comercio | Minutos hasta abrir o cerrar       | Actualizado cada minuto                          |
-| Cada tarjeta  | Saldo (€)                          | Introducido por usted; utilizable en condiciones |
+| Dispositivo   | Función                            | Notas                                       |
+| ------------- | ---------------------------------- | ------------------------------------------- |
+| Cada comercio | Abierto (1 = abierto, 0 = cerrado) | Utilizable en cualquier condición de escena |
+| Cada comercio | Minutos hasta abrir o cerrar       | Actualizado cada minuto                     |
 
 ## Escenas
 
@@ -156,28 +135,19 @@ historial.
   restantes. Ejemplo: «{{store_name}} cierra a las {{time}}, quedan {{minutes_left}}
   minutos.»
 
-«El comercio está abierto» y «el saldo supera 10 €» son estados: use las condiciones
-de dispositivo de Gladys.
+«El comercio está abierto» es un estado: use las condiciones de dispositivo de
+Gladys.
 
 ### Acciones
 
 - **¿Está abierto un comercio?** (`is_store_open`): elija un comercio. Salidas:
   _abierto_ (sí/no), la hora del próximo cambio (HH:MM) y los minutos hasta entonces.
-- **Actualizar el saldo de una tarjeta** (`set_loyalty_balance`): elija una tarjeta y
-  luego _fijar el saldo en_ un importe, o _sumar al saldo_ (un importe negativo para
-  gastar). Salida: el nuevo saldo. Nunca baja de 0.
 
 ## Panel
 
 - **Horario de comercios**: todos los comercios de un vistazo (abierto o cerrado,
   hasta cuándo), o — con el ajuste _Comercio_ — un comercio en detalle, con una cuenta
   atrás y el horario de hoy.
-- **Tarjeta de fidelidad**: el código de barras de una tarjeta (ajuste _Tarjeta_;
-  vacío = la primera), su saldo y su número, y un botón **Actualizar el saldo**.
-  Muéstrelo en caja: suba el brillo del móvil para el escáner.
-
-El código es un EAN-13 cuando el número de tarjeta lo es (13 cifras, dígito de
-control válido), y un Code 128 si no. Los escáneres de caja leen ambos.
 
 ## Solución de problemas
 
@@ -198,14 +168,8 @@ control válido), y un Code 128 si no. Los escáneres de caja leen ambos.
   inglés (`Mo`, no `Lu`) y horas `HH:MM` (`08:30`, no `8.30`).
 - **Un comercio «no se entiende»**: cada entrada debe ser `Nombre = horario`, entradas
   separadas por `|`.
-- **Una tarjeta «no se entiende»**: el número debe tener de 6 a 20 cifras.
-- **La caja no lee el código**: compruebe el número, suba el brillo y amplíe el
-  widget. Si su tarjeta lleva otro tipo de código de barras, indíquelo en una issue.
 
 ## Datos
-
-Los saldos se guardan en el volumen `/data` de la integración (`cards.json`) y como
-estados de Gladys; nunca salen de su Gladys.
 
 Para encontrar el horario (comercios escritos sin horario, y pestaña Descubrimiento),
 las palabras buscadas, los tipos de comercios y la ubicación de sus casas (una zona

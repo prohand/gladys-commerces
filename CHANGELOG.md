@@ -27,12 +27,9 @@ the version's GitHub Release.
   A shop created from there works like a typed one, its hours kept up to date. New
   settings: the houses to search around, the kinds of shops to offer. **Test the
   configuration** looks again and says what the Discovery tab offers, or why nothing.
-- Loyalty cards of any brand: one device per card with its balance, entered by the
-  user; the card's barcode (EAN-13 or Code 128) on the dashboard.
 - Scene triggers: a shop opens soon, a shop closes soon (filter: the shop).
-- Scene actions: is a shop open, update a loyalty card balance (set or add).
-- Dashboard widgets: shop hours (all shops, or one in detail), loyalty card
-  (barcode, balance, update form).
+- Scene action: is a shop open.
+- Dashboard widget: shop hours (all shops, or one in detail).
 - Configuration-screen action: test the configuration.
 - English, French, German and Spanish for every text and the documentation.
 - CI (Prettier, ESLint, tests on Node 22 and 24, store checks, Docker build),
