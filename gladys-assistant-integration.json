@@ -75,10 +75,10 @@
         "es": "Sus comercios"
       },
       "description": {
-        "en": "One shop per entry: a name, an equals sign, then its hours in the OpenStreetMap syntax (days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed) or auto: the hours are then looked up on OpenStreetMap, at the shop of that name nearest to your Gladys houses (auto: other words to look for another name). Shops separated by a vertical bar |.",
-        "fr": "Un commerce par entrée : un nom, un signe égal, puis ses horaires en syntaxe OpenStreetMap (jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé) ou auto : les horaires sont alors cherchés sur OpenStreetMap, au commerce de ce nom le plus proche de vos maisons Gladys (auto: d'autres mots pour chercher un autre nom). Commerces séparés par une barre verticale |.",
-        "de": "Ein Geschäft pro Eintrag: ein Name, ein Gleichheitszeichen, dann seine Zeiten in OpenStreetMap-Syntax (Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen) oder auto: Die Zeiten werden dann auf OpenStreetMap gesucht, beim Geschäft dieses Namens, das Ihren Gladys-Häusern am nächsten liegt (auto: andere Wörter, um einen anderen Namen zu suchen). Geschäfte durch einen senkrechten Strich | getrennt.",
-        "es": "Un comercio por entrada: un nombre, un signo igual, y luego su horario en sintaxis OpenStreetMap (días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado) o auto: el horario se busca entonces en OpenStreetMap, en el comercio con ese nombre más cercano a sus casas de Gladys (auto: otras palabras para buscar otro nombre). Comercios separados por una barra vertical |."
+        "en": "One shop per entry: a name alone, the hours are then looked up on OpenStreetMap, at the shop of that name nearest to your Gladys houses (Name = auto: other words to look for another name), or a name, an equals sign and its hours in the OpenStreetMap syntax (days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed). Shops separated by a vertical bar |.",
+        "fr": "Un commerce par entrée : un nom seul, les horaires sont alors cherchés sur OpenStreetMap, au commerce de ce nom le plus proche de vos maisons Gladys (Nom = auto: d'autres mots pour chercher un autre nom), ou un nom, un signe égal et ses horaires en syntaxe OpenStreetMap (jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé). Commerces séparés par une barre verticale |.",
+        "de": "Ein Geschäft pro Eintrag: ein Name allein, die Zeiten werden dann auf OpenStreetMap gesucht, beim Geschäft dieses Namens, das Ihren Gladys-Häusern am nächsten liegt (Name = auto: andere Wörter, um einen anderen Namen zu suchen), oder ein Name, ein Gleichheitszeichen und seine Zeiten in OpenStreetMap-Syntax (Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen). Geschäfte durch einen senkrechten Strich | getrennt.",
+        "es": "Un comercio por entrada: un nombre solo, el horario se busca entonces en OpenStreetMap, en el comercio con ese nombre más cercano a sus casas de Gladys (Nombre = auto: otras palabras para buscar otro nombre), o un nombre, un signo igual y su horario en sintaxis OpenStreetMap (días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado). Comercios separados por una barra vertical |."
       }
     },
     {
@@ -91,13 +91,41 @@
         "es": "Comercios y horario"
       },
       "placeholder": {
-        "en": "e.g. Leclerc = auto | Pharmacy = Mo-Fr 09:00-19:00",
-        "fr": "ex. Leclerc = auto | Pharmacie = Mo-Fr 09:00-19:00",
-        "de": "z. B. Leclerc = auto | Apotheke = Mo-Fr 09:00-19:00",
-        "es": "p. ej. Leclerc = auto | Farmacia = Mo-Fr 09:00-19:00"
+        "en": "e.g. Leclerc | Pharmacy = Mo-Fr 09:00-19:00",
+        "fr": "ex. Leclerc | Pharmacie = Mo-Fr 09:00-19:00",
+        "de": "z. B. Leclerc | Apotheke = Mo-Fr 09:00-19:00",
+        "es": "p. ej. Leclerc | Farmacia = Mo-Fr 09:00-19:00"
       },
       "required": false,
       "default": ""
+    },
+    {
+      "key": "around_section",
+      "type": "section",
+      "label": {
+        "en": "Around your houses",
+        "fr": "Autour de vos maisons",
+        "de": "Rund um Ihre Häuser",
+        "es": "Alrededor de sus casas"
+      },
+      "description": {
+        "en": "The integration looks on OpenStreetMap, around each Gladys house with a location, for the nearest shops of the kinds checked below that publish their hours. Open the Discovery tab: the shops are listed with their house and distance, e.g. E.Leclerc (Home, 1.3 km); create the ones you go to.",
+        "fr": "L'intégration cherche sur OpenStreetMap, autour de chaque maison Gladys qui a un emplacement, les commerces les plus proches des types cochés ci-dessous qui publient leurs horaires. Ouvrez l'onglet Découverte : les commerces y sont listés avec leur maison et leur distance, ex. E.Leclerc (Maison, 1.3 km) ; créez ceux où vous allez.",
+        "de": "Die Integration sucht auf OpenStreetMap rund um jedes Gladys-Haus mit Standort die nächsten Geschäfte der unten angekreuzten Arten, die ihre Zeiten veröffentlichen. Öffnen Sie den Reiter Erkennung: Die Geschäfte stehen dort mit ihrem Haus und ihrer Entfernung, z. B. E.Leclerc (Zuhause, 1.3 km); legen Sie die an, in die Sie gehen.",
+        "es": "La integración busca en OpenStreetMap, alrededor de cada casa de Gladys con ubicación, los comercios más cercanos de los tipos marcados abajo que publican su horario. Abra la pestaña Descubrimiento: los comercios aparecen con su casa y su distancia, p. ej. E.Leclerc (Casa, 1.3 km); cree aquellos a los que va."
+      }
+    },
+    {
+      "key": "search_houses",
+      "type": "multi_select",
+      "source": "houses",
+      "label": {
+        "en": "Houses to search around (none checked: all)",
+        "fr": "Maisons autour desquelles chercher (aucune cochée : toutes)",
+        "de": "Häuser, um die gesucht wird (keines angekreuzt: alle)",
+        "es": "Casas alrededor de las que buscar (ninguna marcada: todas)"
+      },
+      "required": false
     },
     {
       "key": "search_radius_km",
@@ -109,15 +137,143 @@
         "es": "Radio de búsqueda alrededor de las casas (km)"
       },
       "description": {
-        "en": "For the shops written auto: how far from a Gladys house they are looked for on OpenStreetMap.",
-        "fr": "Pour les commerces écrits auto : à quelle distance d'une maison Gladys ils sont cherchés sur OpenStreetMap.",
-        "de": "Für die mit auto eingetragenen Geschäfte: wie weit von einem Gladys-Haus sie auf OpenStreetMap gesucht werden.",
-        "es": "Para los comercios escritos auto: a qué distancia de una casa de Gladys se buscan en OpenStreetMap."
+        "en": "How far from a house the shops are looked for on OpenStreetMap: the shops written without hours, and the shops offered in the Discovery tab.",
+        "fr": "À quelle distance d'une maison les commerces sont cherchés sur OpenStreetMap : ceux écrits sans horaires, et ceux proposés dans l'onglet Découverte.",
+        "de": "Wie weit von einem Haus die Geschäfte auf OpenStreetMap gesucht werden: die ohne Zeiten eingetragenen und die im Reiter Erkennung angebotenen.",
+        "es": "A qué distancia de una casa se buscan los comercios en OpenStreetMap: los escritos sin horario y los propuestos en la pestaña Descubrimiento."
       },
       "required": false,
       "default": 10,
       "min": 1,
       "max": 50
+    },
+    {
+      "key": "discover_kinds",
+      "type": "multi_select",
+      "label": {
+        "en": "Kinds of shops to offer in the Discovery tab (none checked: none)",
+        "fr": "Types de commerces à proposer dans l'onglet Découverte (aucun coché : aucun)",
+        "de": "Arten von Geschäften im Reiter Erkennung (keine angekreuzt: keine)",
+        "es": "Tipos de comercios a proponer en la pestaña Descubrimiento (ninguno marcado: ninguno)"
+      },
+      "description": {
+        "en": "The 3 nearest of each kind, per house.",
+        "fr": "Les 3 plus proches de chaque type, par maison.",
+        "de": "Die 3 nächsten jeder Art, pro Haus.",
+        "es": "Los 3 más cercanos de cada tipo, por casa."
+      },
+      "options": [
+        {
+          "value": "supermarket",
+          "label": {
+            "en": "Supermarkets",
+            "fr": "Supermarchés",
+            "de": "Supermärkte",
+            "es": "Supermercados"
+          }
+        },
+        {
+          "value": "convenience",
+          "label": {
+            "en": "Convenience stores",
+            "fr": "Supérettes",
+            "de": "Lebensmittelläden",
+            "es": "Tiendas de barrio"
+          }
+        },
+        {
+          "value": "bakery",
+          "label": {
+            "en": "Bakeries",
+            "fr": "Boulangeries, pâtisseries",
+            "de": "Bäckereien",
+            "es": "Panaderías"
+          }
+        },
+        {
+          "value": "butcher",
+          "label": {
+            "en": "Butchers",
+            "fr": "Boucheries",
+            "de": "Metzgereien",
+            "es": "Carnicerías"
+          }
+        },
+        {
+          "value": "greengrocer",
+          "label": {
+            "en": "Greengrocers",
+            "fr": "Primeurs",
+            "de": "Obst- und Gemüseläden",
+            "es": "Fruterías"
+          }
+        },
+        {
+          "value": "pharmacy",
+          "label": {
+            "en": "Pharmacies",
+            "fr": "Pharmacies",
+            "de": "Apotheken",
+            "es": "Farmacias"
+          }
+        },
+        {
+          "value": "post_office",
+          "label": {
+            "en": "Post offices",
+            "fr": "Bureaux de poste",
+            "de": "Postämter",
+            "es": "Oficinas de correos"
+          }
+        },
+        {
+          "value": "doityourself",
+          "label": {
+            "en": "DIY and hardware stores",
+            "fr": "Bricolage, quincaillerie",
+            "de": "Baumärkte",
+            "es": "Bricolaje y ferretería"
+          }
+        },
+        {
+          "value": "garden_centre",
+          "label": {
+            "en": "Garden centres",
+            "fr": "Jardineries",
+            "de": "Gartencenter",
+            "es": "Centros de jardinería"
+          }
+        },
+        {
+          "value": "sports",
+          "label": {
+            "en": "Sports shops",
+            "fr": "Magasins de sport",
+            "de": "Sportgeschäfte",
+            "es": "Tiendas de deportes"
+          }
+        },
+        {
+          "value": "hairdresser",
+          "label": {
+            "en": "Hairdressers",
+            "fr": "Coiffeurs",
+            "de": "Friseure",
+            "es": "Peluquerías"
+          }
+        },
+        {
+          "value": "recycling_centre",
+          "label": {
+            "en": "Recycling centres",
+            "fr": "Déchetteries",
+            "de": "Wertstoffhöfe",
+            "es": "Puntos limpios"
+          }
+        }
+      ],
+      "required": false,
+      "default": ["supermarket", "bakery", "pharmacy", "post_office", "recycling_centre"]
     },
     {
       "key": "notice_minutes",

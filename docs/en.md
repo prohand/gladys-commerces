@@ -6,20 +6,22 @@ This integration brings two things about the shops you go to into Gladys:
 - your **loyalty cards**, of any brand: their barcode on the dashboard, to scan at
   the till from your phone, and their balance.
 
-Everything is computed in Gladys: no account, no password. The only call out is
-optional: looking up on OpenStreetMap the hours of the shops you write `auto`.
+Everything is computed in Gladys: no account, no password. The only call out is to
+OpenStreetMap, to find the hours of shops around your houses (see below).
 
 ## Set up
 
 Open **Integrations**, find the integration, install it, then fill in the
 **Configuration** screen.
 
-| Field                   | What to put                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| Shops and opening hours | Your shops and their hours (see below). Leave empty if you only want cards.          |
-| Search radius ... (km)  | For the shops written `auto`: how far from a house they are looked for. Default: 10. |
-| Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.            |
-| Card numbers            | Your loyalty cards (see below). Leave empty if you have none.                        |
+| Field                   | What to put                                                                    |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| Shops and opening hours | Your shops and their hours (see below). Leave empty if you only want cards.    |
+| Houses to search around | The Gladys houses to search around. None checked: every house with a location. |
+| Search radius ... (km)  | How far from a house the shops are looked for. Default: 10.                    |
+| Kinds of shops ...      | The kinds of shops offered in the Discovery tab. None checked: none.           |
+| Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.      |
+| Card numbers            | Your loyalty cards (see below). Leave empty if you have none.                  |
 
 Then click **Test the configuration**: the answer says, shop by shop, whether it is
 open, and which cards were understood.
@@ -28,7 +30,7 @@ Finally, open the **Discovery** tab of the integration and create the devices.
 
 ### Shops and opening hours
 
-One shop per entry: a name, `=`, its hours. Separate the shops with `|`:
+One shop per entry: a name, then `=` and its hours if you want to type them. Separate the shops with `|`:
 
 ```
 Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacy = Mo-Fr 09:00-19:00 | Bakery = Tu-Su 07:00-13:00,15:30-19:30
@@ -54,7 +56,7 @@ The name identifies the shop: renaming it creates a new device in Gladys.
 
 #### Hours found automatically
 
-Write `auto` instead of the hours: `Leclerc = auto`. The integration then looks on
+Write only the name: `Leclerc` (or `Leclerc = auto`). The integration then looks on
 OpenStreetMap for the shop of that name nearest to your Gladys houses (all the
 houses with a location, set in **Settings → Houses**), and takes its hours. To look
 for other words than the name, write them after `auto:`, for example
@@ -68,6 +70,18 @@ for other words than the name, write them after `auto:`, for example
   keeps them.
 - If OpenStreetMap has no hours for your shop, or hours the integration cannot
   read, type them by hand (and why not add them on openstreetmap.org).
+
+### Shops around your houses (Discovery tab)
+
+The integration looks on OpenStreetMap, around each Gladys house with a location
+(set in **Settings → Houses**), for the nearest shops of the kinds checked in the
+configuration — supermarkets, bakeries, pharmacies, post offices, recycling
+centres… — that publish their opening hours. The 3 nearest of each kind, per house.
+
+Open the **Discovery** tab of the integration: each shop is listed with its house
+and its distance, for example `E.Leclerc (Home, 1.3 km)`. Create the ones you go to,
+in a room of the right house, and rename them as you like: they work like the shops
+you type, and their hours are kept up to date once a day.
 
 ### Loyalty cards
 
@@ -144,7 +158,8 @@ a Code 128 otherwise. Both are read by till scanners.
 The balances are kept in the integration's own `/data` volume (`cards.json`) and
 as Gladys states; they never leave your Gladys.
 
-For the shops written `auto` only: the words looked for and the location of your
-houses (an area of the search radius around each) are sent to the OpenStreetMap
-Overpass API (`overpass-api.de`), once a day. The hours found are kept in
-`/data/hours.json`. Without `auto`, nothing is sent.
+To find the hours (shops written without hours, and the Discovery tab), the words
+looked for, the kinds of shops and the location of your houses (an area of the
+search radius around each) are sent to the OpenStreetMap Overpass API
+(`overpass-api.de`), once a day. The hours found are kept in `/data/hours.json`. To
+send nothing: type the hours of every shop and uncheck every kind of shop.

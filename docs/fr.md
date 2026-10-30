@@ -7,20 +7,22 @@ Cette intégration apporte dans Gladys deux choses sur les commerces où vous al
   bord, à scanner en caisse depuis votre téléphone, et leur cagnotte.
 
 Tout est calculé dans Gladys : aucun compte, aucun mot de passe. Le seul appel
-externe est facultatif : chercher sur OpenStreetMap les horaires des commerces que
-vous écrivez `auto`.
+externe va à OpenStreetMap, pour trouver les horaires des commerces autour de vos
+maisons (voir plus bas).
 
 ## Installation
 
 Ouvrez **Intégrations**, cherchez l'intégration, installez-la, puis remplissez
 l'écran **Configuration**.
 
-| Champ                       | Que mettre                                                                                       |
-| --------------------------- | ------------------------------------------------------------------------------------------------ |
-| Commerces et horaires       | Vos commerces et leurs horaires (voir plus bas). Vide si vous voulez seulement les cartes.       |
-| Rayon de recherche ... (km) | Pour les commerces écrits `auto` : à quelle distance d'une maison les chercher. Par défaut : 10. |
-| Préavis avant ... (min)     | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.                 |
-| Numéros de carte            | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                              |
+| Champ                              | Que mettre                                                                                           |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Commerces et horaires              | Vos commerces et leurs horaires (voir plus bas). Vide si vous voulez seulement les cartes.           |
+| Maisons autour desquelles chercher | Les maisons Gladys autour desquelles chercher. Aucune cochée : toutes celles qui ont un emplacement. |
+| Rayon de recherche ... (km)        | À quelle distance d'une maison les commerces sont cherchés. Par défaut : 10.                         |
+| Types de commerces ...             | Les types de commerces proposés dans l'onglet Découverte. Aucun coché : aucun.                       |
+| Préavis avant ... (min)            | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.                     |
+| Numéros de carte                   | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                                  |
 
 Cliquez ensuite sur **Tester la configuration** : la réponse dit, commerce par
 commerce, s'il est ouvert, et quelles cartes ont été comprises.
@@ -29,7 +31,7 @@ Enfin, ouvrez l'onglet **Découverte** de l'intégration et créez les appareils
 
 ### Commerces et horaires
 
-Un commerce par entrée : un nom, `=`, ses horaires. Séparez les commerces par `|` :
+Un commerce par entrée : un nom, puis `=` et ses horaires si vous voulez les écrire. Séparez les commerces par `|` :
 
 ```
 Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00 | Boulangerie = Tu-Su 07:00-13:00,15:30-19:30
@@ -56,7 +58,7 @@ Le nom identifie le commerce : le renommer crée un nouvel appareil dans Gladys.
 
 #### Horaires trouvés automatiquement
 
-Écrivez `auto` à la place des horaires : `Leclerc = auto`. L'intégration cherche
+Écrivez seulement le nom : `Leclerc` (ou `Leclerc = auto`). L'intégration cherche
 alors sur OpenStreetMap le commerce de ce nom le plus proche de vos maisons Gladys
 (toutes les maisons dont l'emplacement est renseigné dans **Paramètres → Maisons**),
 et prend ses horaires. Pour chercher d'autres mots que le nom, écrivez-les après
@@ -73,6 +75,20 @@ majuscules ne comptent pas.
 - Si OpenStreetMap n'a pas d'horaires pour votre commerce, ou des horaires que
   l'intégration ne sait pas lire, écrivez-les à la main (et pourquoi pas ajoutez-les
   sur openstreetmap.org).
+
+### Commerces autour de vos maisons (onglet Découverte)
+
+L'intégration cherche sur OpenStreetMap, autour de chaque maison Gladys qui a un
+emplacement (renseigné dans **Paramètres → Maisons**), les commerces les plus proches
+des types cochés dans la configuration — supermarchés, boulangeries, pharmacies,
+bureaux de poste, déchetteries… — qui publient leurs horaires. Les 3 plus proches de
+chaque type, par maison.
+
+Ouvrez l'onglet **Découverte** de l'intégration : chaque commerce y est listé avec sa
+maison et sa distance, par exemple `E.Leclerc (Maison, 1.3 km)`. Créez ceux où vous
+allez, dans une pièce de la bonne maison, et renommez-les comme vous voulez : ils
+marchent comme les commerces que vous écrivez, et leurs horaires sont mis à jour
+une fois par jour.
 
 ### Cartes de fidélité
 
@@ -154,7 +170,9 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 Les cagnottes sont gardées dans le volume `/data` de l'intégration (`cards.json`) et
 comme états Gladys ; elles ne sortent jamais de votre Gladys.
 
-Pour les commerces écrits `auto` seulement : les mots cherchés et l'emplacement de vos
-maisons (une zone du rayon de recherche autour de chacune) sont envoyés à l'API
-Overpass d'OpenStreetMap (`overpass-api.de`), une fois par jour. Les horaires trouvés
-sont gardés dans `/data/hours.json`. Sans `auto`, rien n'est envoyé.
+Pour trouver les horaires (commerces écrits sans horaires, et onglet Découverte), les
+mots cherchés, les types de commerces et l'emplacement de vos maisons (une zone du
+rayon de recherche autour de chacune) sont envoyés à l'API Overpass d'OpenStreetMap
+(`overpass-api.de`), une fois par jour. Les horaires trouvés sont gardés dans
+`/data/hours.json`. Pour ne rien envoyer : écrivez les horaires de tous les commerces
+et décochez tous les types de commerces.

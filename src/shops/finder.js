@@ -1,16 +1,21 @@
 // -----------------------------------------------------------------------------
 // Opening hours found automatically, on OpenStreetMap.
 //
-// A store written `Name = auto` (or `Name = auto: words to look for`) has no
-// hours in the configuration: they are looked up on OpenStreetMap, among the
-// shops around the houses of Gladys that carry an `opening_hours` tag — the
-// syntax hours.js reads. The nearest match to any house wins.
+// Two ways, both answered by one Overpass query around the houses of Gladys
+// (all the located houses, or the ones picked in the configuration):
 //
-// This is the only network call of the integration, and only when a store
-// asks for it: the Overpass API receives the words looked for and an area
-// around each located house. The results are kept in /data/hours.json, so a
-// restart without network keeps the hours, and refreshed once a day (the
-// shops update their hours on the map from time to time).
+//   - by name: a store written without hours (`Leclerc`, `Leclerc = auto`,
+//     `Leclerc = auto: words`) takes the hours of the nearest shop of that
+//     name that carries an `opening_hours` tag — the syntax hours.js reads;
+//   - by discovery: the nearest shops of the kinds picked in the
+//     configuration (supermarket, bakery…) are offered in the Discovery tab,
+//     per house; the ones the user creates keep their hours up to date.
+//
+// This is the only network call of the integration: the Overpass API
+// receives the words looked for, the kinds, and an area around each house.
+// The results are kept in /data/hours.json, so a restart without network
+// keeps the hours, and refreshed once a day (the shops update their hours on
+// the map from time to time).
 // -----------------------------------------------------------------------------
 
 import { readFile, writeFile } from 'node:fs/promises';
@@ -27,6 +32,43 @@ export const REFRESH_MS = 24 * 3600_000;
 /** After a failed lookup, the next try. */
 export const RETRY_MS = 3600_000;
 const TIMEOUT_MS = 60_000;
+
+/** The nearest shops of each kind offered per house, in the Discovery tab. */
+export const PER_KIND = 3;
+
+/**
+ * The kinds of shops the Discovery tab can offer: the OpenStreetMap tag, its
+ * values, and an extra tag that must be there. Keys are stored in the
+ * configuration (`discover_kinds`): never renamed.
+ */
+export const SHOP_KINDS = {
+  supermarket: { tag: 'shop', values: ['supermarket'] },
+  convenience: { tag: 'shop', values: ['convenience'] },
+  bakery: { tag: 'shop', values: ['bakery', 'pastry'] },
+  butcher: { tag: 'shop', values: ['butcher'] },
+  greengrocer: { tag: 'shop', values: ['greengrocer'] },
+  pharmacy: { tag: 'amenity', values: ['pharmacy'] },
+  post_office: { tag: 'amenity', values: ['post_office'] },
+  doityourself: { tag: 'shop', values: ['doityourself', 'hardware'] },
+  garden_centre: { tag: 'shop', values: ['garden_centre'] },
+  sports: { tag: 'shop', values: ['sports'] },
+  hairdresser: { tag: 'shop', values: ['hairdresser'] },
+  recycling_centre: { tag: 'amenity', values: ['recycling'], extra: ['recycling_type', 'centre'] },
+};
+
+/** The kind of a shop, from its tags; `null` for none of SHOP_KINDS. */
+export function kindOf(tags = {}) {
+  for (const [kind, { tag, values, extra }] of Object.entries(SHOP_KINDS)) {
+    if (values.includes(tags[tag]) && (!extra || tags[extra[0]] === extra[1])) {
+      return kind;
+    }
+  }
+  return null;
+}
+
+/** `{ type: 'way', id: 101 }` → `w101`: a shop in the cache and in a store id. */
+export const shopKey = (element) => `${element.type[0]}${element.id}`;
+const KEY = /^([nwr])(\d{1,15})$/;
 
 /**
  * `auto` or `auto: words` as the hours of a store. `auto` is not valid
@@ -96,18 +138,46 @@ export function searchPattern(search) {
 }
 
 /**
- * The Overpass query: every shop with opening hours whose name or brand holds
- * one of the searches, around each located house.
+ * The Overpass query, one for everything:
+ *   - the shops with opening hours whose name or brand holds a search;
+ *   - the named shops with opening hours of the kinds to discover;
+ *   - the shops already created from the Discovery tab, by id.
+ * Only constants, numbers and searchPattern reach it: nothing typed as is.
  */
-export function overpassQuery(searches, houses, radiusMeters) {
+export function overpassQuery({ searches = [], kinds = [], known = [], houses, radiusMeters }) {
+  const lines = [];
   const pattern = searches.map(searchPattern).join('|');
-  const around = houses.map(
-    (house) => `(around:${radiusMeters},${house.latitude},${house.longitude})`,
-  );
-  const lines = around.flatMap((area) =>
-    ['name', 'brand'].map((tag) => `  nwr["opening_hours"]["${tag}"~"${pattern}",i]${area};`),
-  );
-  return `[out:json][timeout:50];\n(\n${lines.join('\n')}\n);\nout tags center 1000;`;
+  // The kinds sharing a tag (and extra tag) go in one line.
+  const groups = new Map();
+  for (const kind of kinds) {
+    const { tag, values, extra } = SHOP_KINDS[kind];
+    const id = `${tag}|${extra ?? ''}`;
+    const group = groups.get(id) ?? { tag, extra, values: [] };
+    group.values.push(...values);
+    groups.set(id, group);
+  }
+  for (const house of houses) {
+    const area = `(around:${radiusMeters},${house.latitude},${house.longitude})`;
+    if (pattern) {
+      for (const tag of ['name', 'brand']) {
+        lines.push(`  nwr["opening_hours"]["${tag}"~"${pattern}",i]${area};`);
+      }
+    }
+    for (const { tag, extra, values } of groups.values()) {
+      const more = extra ? `["${extra[0]}"="${extra[1]}"]` : '';
+      lines.push(
+        `  nwr["opening_hours"]["name"]["${tag}"~"^(${values.join('|')})$"]${more}${area};`,
+      );
+    }
+  }
+  const types = { n: 'node', w: 'way', r: 'relation' };
+  for (const [letter, type] of Object.entries(types)) {
+    const ids = known.map((key) => KEY.exec(key)).filter((match) => match?.[1] === letter);
+    if (ids.length > 0) {
+      lines.push(`  ${type}(id:${ids.map((match) => match[2]).join(',')});`);
+    }
+  }
+  return `[out:json][timeout:50];\n(\n${lines.join('\n')}\n);\nout tags center;`;
 }
 
 /** Distance in meters between two points (haversine). */
@@ -121,6 +191,33 @@ export function distanceMeters(a, b) {
   return 2 * 6371e3 * Math.asin(Math.sqrt(h));
 }
 
+/** What a store shows of a shop: `null` for an element without hours or place. */
+export function shopOf(element) {
+  const tags = element.tags ?? {};
+  const latitude = element.lat ?? element.center?.lat;
+  const longitude = element.lon ?? element.center?.lon;
+  const name = tags.name ?? tags.brand;
+  if (!tags.opening_hours || !name || latitude === undefined || longitude === undefined) {
+    return null;
+  }
+  return {
+    key: shopKey(element),
+    name,
+    city: tags['addr:city'] ?? null,
+    hours: tags.opening_hours.trim(),
+    osm: `https://www.openstreetmap.org/${element.type}/${element.id}`,
+    latitude,
+    longitude,
+  };
+}
+
+/** The shop with its distance to a house. */
+function near(shop, house) {
+  const { latitude, longitude, ...rest } = shop;
+  const distance = Math.round(distanceMeters(house, { latitude, longitude }));
+  return { ...rest, house: house.name, distance };
+}
+
 /**
  * The nearest shop of each search, among the elements Overpass returned.
  * @returns {Record<string, object>} per search, the shop found (absent: none)
@@ -128,34 +225,50 @@ export function distanceMeters(a, b) {
 export function nearestShops(elements, searches, houses, radiusMeters) {
   const found = {};
   for (const element of elements) {
-    const tags = element.tags ?? {};
-    const latitude = element.lat ?? element.center?.lat;
-    const longitude = element.lon ?? element.center?.lon;
-    if (!tags.opening_hours || latitude === undefined || longitude === undefined) {
+    const shop = shopOf(element);
+    if (!shop) {
       continue;
     }
-    const names = [tags.name, tags.brand].filter(Boolean);
+    const names = [element.tags.name, element.tags.brand].filter(Boolean);
     for (const search of searches) {
       if (!names.some((name) => nameMatches(name, search))) {
         continue;
       }
       for (const house of houses) {
-        const distance = distanceMeters(house, { latitude, longitude });
-        if (distance > radiusMeters || (found[search] && found[search].distance <= distance)) {
-          continue;
+        const candidate = near(shop, house);
+        if (
+          candidate.distance <= radiusMeters &&
+          !(found[search] && found[search].distance <= candidate.distance)
+        ) {
+          found[search] = candidate;
         }
-        found[search] = {
-          hours: tags.opening_hours.trim(),
-          name: tags.name ?? tags.brand,
-          city: tags['addr:city'] ?? null,
-          house: house.name,
-          distance: Math.round(distance),
-          osm: `https://www.openstreetmap.org/${element.type}/${element.id}`,
-        };
       }
     }
   }
   return found;
+}
+
+/**
+ * The shops to offer in the Discovery tab: per house and per kind, the
+ * PER_KIND nearest, the houses in their order, each by distance.
+ * @returns {Array<object>} shops with their `kind`, `house` and `distance`
+ */
+export function nearbyShops(elements, kinds, houses, radiusMeters) {
+  const shops = elements
+    .map((element) => ({ shop: shopOf(element), kind: kindOf(element.tags) }))
+    .filter(({ shop, kind }) => shop && kinds.includes(kind));
+  return houses.flatMap((house) =>
+    kinds
+      .flatMap((kind) =>
+        shops
+          .filter((candidate) => candidate.kind === kind)
+          .map(({ shop }) => ({ ...near(shop, house), kind }))
+          .filter((shop) => shop.distance <= radiusMeters)
+          .sort((a, b) => a.distance - b.distance)
+          .slice(0, PER_KIND),
+      )
+      .sort((a, b) => a.distance - b.distance),
+  );
 }
 
 /** The results, as a JSON file in /data. */
@@ -177,11 +290,14 @@ export function fileCache(directory = process.env.DATA_DIR ?? '/data') {
 }
 
 /** The houses with a location, `null` when Gladys refuses to give them. */
-async function locatedHouses(gladys) {
+async function locatedHouses(gladys, selectors = []) {
   try {
     const houses = await gladys.getHouses();
     return houses.filter(
-      (house) => Number.isFinite(house.latitude) && Number.isFinite(house.longitude),
+      (house) =>
+        Number.isFinite(house.latitude) &&
+        Number.isFinite(house.longitude) &&
+        (selectors.length === 0 || selectors.includes(house.selector)),
     );
   } catch (err) {
     logger.warn(`The houses of Gladys could not be read: ${err.message}`);
@@ -189,13 +305,16 @@ async function locatedHouses(gladys) {
   }
 }
 
+const unique = (list = []) => [...new Set(list)].sort();
+
 /**
- * Looks the stores up and keeps the results.
+ * Looks the stores up and keeps the results, as plain objects (kept as JSON):
  *
- * `results[search]` is the shop found (`{ hours, name, city, house, distance,
- * osm }`) or why there is none (`{ error, radiusKm? }`, error being
- * `not_found`, `unreachable`, `no_house` or `no_access`): plain objects, kept
- * as JSON.
+ *   - `results[search]`: the shop found (`{ key, name, city, hours, osm,
+ *     house, distance }`) or why there is none (`{ error, radiusKm? }`, error
+ *     being `not_found`, `unreachable`, `no_house` or `no_access`);
+ *   - `nearby`: the shops to offer in the Discovery tab (nearbyShops);
+ *   - `shops[key]`: the shops created from the Discovery tab, by key.
  */
 export class HoursFinder {
   /**
@@ -211,6 +330,8 @@ export class HoursFinder {
     this.cache = cache;
     this.now = now;
     this.results = {};
+    this.nearby = [];
+    this.shops = {};
     this.signature = null;
     this.checkedAt = 0;
     this.failedAt = 0;
@@ -223,17 +344,37 @@ export class HoursFinder {
     return this.results[search];
   }
 
+  /** A shop of the Discovery tab, by key: the nearby ones and the created ones. */
+  shop(key) {
+    return this.nearby.find((shop) => shop.key === key) ?? this.shops[key];
+  }
+
   /**
-   * Look the searches up when needed: never looked up, older than a day, the
-   * houses or the radius changed, or the last try failed an hour ago.
+   * Look up when needed: never looked up, older than a day, the houses, the
+   * radius or the kinds changed, a created shop unknown, or the last try
+   * failed an hour ago.
+   * @param {object} request
+   * @param {string[]} [request.searches] the searches of the stores
+   * @param {number} request.radiusKm
+   * @param {string[]} [request.kinds] the kinds to discover (SHOP_KINDS keys)
+   * @param {string[]} [request.houses] the selectors of the houses (empty: all)
+   * @param {string[]} [request.known] the keys of the shops created
    * @returns {Promise<boolean>} whether the results changed
    */
-  refresh(searches, radiusKm) {
+  refresh(request) {
     // One lookup at a time: a new configuration saved during a lookup waits.
     const previous = this.running ?? Promise.resolve();
     const running = previous
       .catch(() => {})
-      .then(() => this.lookup([...new Set(searches)].sort(), radiusKm))
+      .then(() =>
+        this.lookup({
+          searches: unique(request.searches),
+          radiusKm: request.radiusKm,
+          kinds: unique(request.kinds).filter((kind) => kind in SHOP_KINDS),
+          houses: unique(request.houses),
+          known: unique(request.known).filter((key) => KEY.test(key)),
+        }),
+      )
       .finally(() => {
         if (this.running === running) {
           this.running = null;
@@ -243,8 +384,8 @@ export class HoursFinder {
     return running;
   }
 
-  async lookup(searches, radiusKm) {
-    if (searches.length === 0) {
+  async lookup({ searches, radiusKm, kinds, houses: selectors, known }) {
+    if (searches.length === 0 && kinds.length === 0 && known.length === 0) {
       return false;
     }
     if (!this.loaded) {
@@ -254,16 +395,25 @@ export class HoursFinder {
         this.signature = saved.signature ?? null;
         this.checkedAt = Date.parse(saved.checked_at) || 0;
         this.results = saved.results;
+        this.nearby = Array.isArray(saved.nearby) ? saved.nearby : [];
+        this.shops = saved.shops && typeof saved.shops === 'object' ? saved.shops : {};
       }
     }
-    const houses = await locatedHouses(this.gladys);
+    const before = this.snapshot();
+    const changed = () => this.snapshot() !== before;
+
+    const houses = await locatedHouses(this.gladys, selectors);
     if (!houses || houses.length === 0) {
-      return this.keep(searches, () => ({ error: houses ? 'no_house' : 'no_access' }));
+      const error = houses ? 'no_house' : 'no_access';
+      this.results = Object.fromEntries(searches.map((search) => [search, { error }]));
+      this.nearby = [];
+      return changed();
     }
     const radius = radiusKm * 1000;
     const signature = JSON.stringify({
-      houses: houses.map((house) => [house.latitude, house.longitude]),
+      houses: houses.map((house) => [house.name, house.latitude, house.longitude]),
       radius,
+      kinds,
     });
     const now = this.now().getTime();
     // Only a shop or a "not found" is an answer: anything else is asked again.
@@ -271,36 +421,53 @@ export class HoursFinder {
     const stale =
       signature !== this.signature ||
       now - this.checkedAt >= REFRESH_MS ||
-      !searches.every((search) => answered(this.results[search]));
+      !searches.every((search) => answered(this.results[search])) ||
+      !known.every((key) => this.shop(key));
+    const lastAnswers = () => {
+      this.results = Object.fromEntries(
+        searches.map((search) => [
+          search,
+          answered(this.results[search]) ? this.results[search] : { error: 'unreachable' },
+        ]),
+      );
+      return changed();
+    };
     if (!stale) {
       return false;
     }
-    const lastAnswers = (search) =>
-      answered(this.results[search]) ? this.results[search] : { error: 'unreachable' };
     if (now - this.failedAt < RETRY_MS) {
-      return this.keep(searches, lastAnswers);
+      return lastAnswers();
     }
 
-    let found;
+    let elements;
     try {
-      found = nearestShops(
-        await this.overpass(overpassQuery(searches, houses, radius)),
-        searches,
-        houses,
-        radius,
+      elements = await this.overpass(
+        overpassQuery({ searches, kinds, known, houses, radiusMeters: radius }),
       );
     } catch (err) {
       logger.warn(`OpenStreetMap lookup failed: ${err.message}`);
       this.failedAt = now;
       // The hours found before stay: a shop rarely changes its hours.
-      return this.keep(searches, lastAnswers);
+      return lastAnswers();
     }
     this.failedAt = 0;
     this.signature = signature;
     this.checkedAt = now;
+    const found = nearestShops(elements, searches, houses, radius);
     this.results = Object.fromEntries(
       searches.map((search) => [search, found[search] ?? { error: 'not_found', radiusKm }]),
     );
+    this.nearby = nearbyShops(elements, kinds, houses, radius);
+    // A created shop gone from the map keeps its last hours.
+    const shops = {};
+    for (const key of known) {
+      const element = elements.find((candidate) => shopKey(candidate) === key);
+      const shop = (element && shopOf(element)) ?? this.shops[key];
+      if (shop) {
+        shops[key] = { ...shop, latitude: undefined, longitude: undefined };
+      }
+    }
+    this.shops = shops;
     for (const search of searches) {
       const shop = found[search];
       logger.info(
@@ -309,21 +476,23 @@ export class HoursFinder {
           : `"${search}": no shop with opening hours within ${radiusKm} km`,
       );
     }
+    if (kinds.length > 0) {
+      logger.info(`${this.nearby.length} shop(s) to offer in the Discovery tab`);
+    }
     await this.cache
       .save({
         signature,
         checked_at: new Date(now).toISOString(),
         results: this.results,
+        nearby: this.nearby,
+        shops: this.shops,
       })
       .catch((err) => logger.error('Could not save the hours found', err));
     return true;
   }
 
-  /** Keep the searches only, each with what `value` gives. */
-  keep(searches, value) {
-    const before = JSON.stringify(this.results);
-    this.results = Object.fromEntries(searches.map((search) => [search, value(search)]));
-    return JSON.stringify(this.results) !== before;
+  snapshot() {
+    return JSON.stringify([this.results, this.nearby, this.shops]);
   }
 
   async overpass(query) {
