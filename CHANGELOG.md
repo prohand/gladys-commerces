@@ -15,6 +15,9 @@ the version's GitHub Release.
 - Fallback OpenStreetMap servers: when `overpass-api.de` does not answer (a
   timeout, a 502), the same query goes to `overpass.private.coffee`, then to
   `maps.mail.ru` (VK Maps). A lookup gives up within a minute and a half.
+- New "overpass.ch key" setting: with a free overpass.ch account, its server is
+  asked first, the public ones if it fails. The key alone or its whole URL can be
+  pasted.
 - Opening hours of several shops in the OpenStreetMap syntax, with French public
   holidays: one device per shop (open, minutes until it opens or closes).
 - Opening hours found automatically: a shop written with no hours (`Name`, or

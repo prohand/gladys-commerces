@@ -28,7 +28,7 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 
 const logger = createLogger({ name: 'finder' });
 
-/** The Overpass servers, asked in this order until one answers. */
+/** The free public Overpass servers, asked in this order until one answers. */
 export const OVERPASS_URLS = [
   'https://overpass-api.de/api/interpreter',
   // Formerly overpass.kumi.systems.
@@ -43,6 +43,25 @@ const USER_AGENT =
 export const REFRESH_MS = 24 * 3600_000;
 /** After a failed lookup, the next try. */
 export const RETRY_MS = 3600_000;
+/**
+ * The server of a personal overpass.ch key (free account), asked before the
+ * public ones: the key is a path segment of the URL.
+ */
+export function overpassChUrl(key) {
+  return `https://api.overpass.ch/v1/${encodeURIComponent(key)}/interpreter`;
+}
+
+/**
+ * An overpass.ch key as typed: the key alone, or the whole URL of the
+ * overpass.ch page pasted. Anything else gives an empty key: the URL is built
+ * by the code, never taken as typed.
+ */
+export function overpassKey(value) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  const key = /^https:\/\/api\.overpass\.ch\/v1\/([^/?#]+)/.exec(text)?.[1] ?? text;
+  return /^[A-Za-z0-9._~-]{1,200}$/.test(key) ? key : '';
+}
+
 /**
  * Per server, a little over the `[timeout:25]` of the query: a lookup around
  * a few houses takes seconds, and a busy server admits a short query sooner.
@@ -384,6 +403,7 @@ export class HoursFinder {
    * @param {string[]} [request.kinds] the kinds to discover (SHOP_KINDS keys)
    * @param {string[]} [request.houses] the selectors of the houses (empty: all)
    * @param {string[]} [request.known] the keys of the shops created
+   * @param {string} [request.overpassKey] a personal overpass.ch key (overpassKey)
    * @param {boolean} [request.force] asked by the user: no wait after a
    *   failure, unless the lookup it waited for just failed
    * @returns {Promise<boolean>} whether the results changed
@@ -401,6 +421,7 @@ export class HoursFinder {
           kinds: unique(request.kinds).filter((kind) => kind in SHOP_KINDS),
           houses: unique(request.houses),
           known: unique(request.known).filter((key) => KEY.test(key)),
+          overpassKey: overpassKey(request.overpassKey),
           // Asked during a lookup that failed: that lookup was the try, a
           // second query at once would only load a busy server again.
           force: Boolean(request.force) && this.failures === failures,
@@ -415,7 +436,7 @@ export class HoursFinder {
     return running;
   }
 
-  async lookup({ searches, radiusKm, kinds, houses: selectors, known, force }) {
+  async lookup({ searches, radiusKm, kinds, houses: selectors, known, overpassKey: key, force }) {
     if (searches.length === 0 && kinds.length === 0 && known.length === 0) {
       return false;
     }
@@ -478,6 +499,7 @@ export class HoursFinder {
     try {
       elements = await this.overpass(
         overpassQuery({ searches, kinds, known, houses, radiusMeters: radius }),
+        key ? [overpassChUrl(key), ...OVERPASS_URLS] : OVERPASS_URLS,
       );
     } catch (err) {
       logger.warn(`OpenStreetMap lookup failed: ${err.message}`);
@@ -537,12 +559,17 @@ export class HoursFinder {
     return JSON.stringify([this.results, this.nearby, this.shops]);
   }
 
-  /** The query on each server in turn, until one answers: the last error if none. */
-  async overpass(query) {
-    for (const [index, url] of OVERPASS_URLS.entries()) {
-      const next = OVERPASS_URLS[index + 1];
+  /**
+   * The query on each server in turn, until one answers: the last error if
+   * none. Only the host is logged: an overpass.ch URL holds the key.
+   */
+  async overpass(query, servers = OVERPASS_URLS) {
+    for (const [index, url] of servers.entries()) {
+      const next = servers[index + 1];
       try {
-        return await this.ask(url, query);
+        const elements = await this.ask(url, query);
+        logger.info(`OpenStreetMap answered by ${new URL(url).host}`);
+        return elements;
       } catch (err) {
         if (!next) {
           throw err;

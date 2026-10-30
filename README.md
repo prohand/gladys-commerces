@@ -60,7 +60,8 @@ the nearest shops of the kinds checked in the configuration: they are offered in
 Discovery tab (`store:osm-<id>` devices, the hours in their params), and the ones
 created are refreshed by id. It is the only network call: when `overpass-api.de`
 fails (a timeout, a 502), the same query goes to `overpass.private.coffee`, then to
-`maps.mail.ru` (`OVERPASS_URLS`).
+`maps.mail.ru` (`OVERPASS_URLS`). A personal overpass.ch key (free account, the
+`overpass_ch_key` secret field) puts `api.overpass.ch` before them.
 
 **Loyalty cards.** Retailers offer no public API for their cards: reading a balance
 would take the customer's password and an unofficial interface, which this

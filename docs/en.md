@@ -20,6 +20,7 @@ Open **Integrations**, find the integration, install it, then fill in the
 | Houses to search around | The Gladys houses to search around. None checked: every house with a location. |
 | Search radius ... (km)  | How far from a house the shops are looked for. Default: 10.                    |
 | Kinds of shops ...      | The kinds of shops offered in the Discovery tab. None checked: none.           |
+| overpass.ch key         | Optional: a steadier OpenStreetMap server (see below how to get the key).      |
 | Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.      |
 | Card numbers            | Your loyalty cards (see below). Leave empty if you have none.                  |
 
@@ -83,6 +84,36 @@ and its distance, for example `E.Leclerc (Home, 1.3 km)`. Create the ones you go
 in a room of the right house, and rename them as you like: they work like the shops
 you type, and their hours are kept up to date once a day.
 
+### overpass.ch key (optional)
+
+The hours are looked up on free public OpenStreetMap servers, often busy: the
+lookup then fails ("OpenStreetMap could not be reached") and tries again within the
+hour. For a steadier lookup, get a free key from [overpass.ch](https://overpass.ch):
+its server is asked first, the public ones if it fails. The free plan (no credit
+card, for personal use) gives 10,000 requests a month; the integration makes one a
+day.
+
+1. Open [overpass.ch/signup](https://overpass.ch/signup) (**Get a free key** button on
+   the home page).
+2. Fill in **E-mail**, **Password** (at least 10 characters) and **Website** (for
+   example `https://github.com/prohand/gladys-horaires-commerces`), tick the terms,
+   then click **Create account** (or **Continue with Google**).
+3. Open the e-mail you receive and click the confirmation link.
+4. **Log in** and open the keys page:
+   [overpass.ch/dashboard/keys](https://overpass.ch/dashboard/keys). Create a key.
+   **Leave "Allowed referers" empty and do not tick "Reject requests without a
+   referer"**: the integration sends no referer, the server would refuse its requests
+   (error 403 `forbidden_referer`).
+5. Copy the key. Its whole URL, `https://api.overpass.ch/v1/…/interpreter`, works too.
+6. In Gladys: **Integrations** → **Horaires Commerces** → **Configuration**, paste it
+   in **overpass.ch key** and save.
+7. Click **Test the configuration**. The integration logs say
+   `OpenStreetMap answered by api.overpass.ch` when the key works.
+
+The key is personal: do not publish it (forum, code repository, screenshot). A key
+refused (403, monthly quota used up) stops nothing: the public servers take over,
+and the logs say `api.overpass.ch failed (…)`.
+
 ### Loyalty cards
 
 One card per entry: a name (brand, holder), `=`, then the number printed under the
@@ -143,6 +174,8 @@ a Code 128 otherwise. Both are read by till scanners.
 - **The Discovery tab is empty**: click **Test the configuration**: it looks again
   on OpenStreetMap and says why (house without a location, no kind checked,
   OpenStreetMap unreachable, no shop of these kinds within the radius).
+- **"OpenStreetMap could not be reached"**: the free public servers are often busy.
+  Set a free overpass.ch key (see **overpass.ch key** above).
 - **"No shop of this name ... on OpenStreetMap"**: try fewer words, a wider
   **Search radius**, or type the hours by hand.
 - **"No house of Gladys has a location"**: set the house location in **Settings →
@@ -163,7 +196,7 @@ as Gladys states; they never leave your Gladys.
 
 To find the hours (shops written without hours, and the Discovery tab), the words
 looked for, the kinds of shops and the location of your houses (an area of the
-search radius around each) are sent to the OpenStreetMap Overpass API
-(`overpass-api.de`; when it does not answer, `overpass.private.coffee`, then
+search radius around each) are sent to the OpenStreetMap Overpass API (first to
+`api.overpass.ch` if you gave a key, in Germany; then `overpass-api.de`; when it does not answer, `overpass.private.coffee`, then
 `maps.mail.ru` run by VK), once a day. The hours found are kept in `/data/hours.json`. To
 send nothing: type the hours of every shop and uncheck every kind of shop.

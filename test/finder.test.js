@@ -14,6 +14,8 @@ import {
   nearestShops,
   overpassQuery,
   OVERPASS_URLS,
+  overpassChUrl,
+  overpassKey,
   REFRESH_MS,
   RETRY_MS,
   searchKey,
@@ -208,6 +210,33 @@ test('a server fails: the same query on the next one, in order', async () => {
   fetch.downUrls = [];
   await finder.refresh({ searches: ['leclerc', 'pharmacie'], radiusKm: 10 });
   assert.deepEqual(fetch.urls.slice(3), [main]);
+});
+
+test('an overpass.ch key: the key alone or the URL pasted, nothing else', () => {
+  assert.equal(overpassKey('  Ab12-cd_34.x~ '), 'Ab12-cd_34.x~');
+  assert.equal(overpassKey('https://api.overpass.ch/v1/Ab12cd34/interpreter'), 'Ab12cd34');
+  assert.equal(overpassKey('https://api.overpass.ch/v1/Ab12cd34/'), 'Ab12cd34');
+  for (const typed of ['', undefined, 42, 'a b', 'key/../x', 'https://evil.example/v1/x', 'é']) {
+    assert.equal(overpassKey(typed), '', String(typed));
+  }
+  assert.equal(overpassChUrl('Ab12cd34'), 'https://api.overpass.ch/v1/Ab12cd34/interpreter');
+});
+
+test('an overpass.ch key: its server first, the public ones if it fails', async () => {
+  const { finder, fetch } = finderSetup();
+  const personal = overpassChUrl('Ab12cd34');
+  await finder.refresh({ searches: ['leclerc'], radiusKm: 10, overpassKey: 'Ab12cd34' });
+  assert.deepEqual(fetch.urls, [personal]);
+  assert.equal(finder.get('leclerc').name, 'E.Leclerc');
+
+  fetch.downUrls = [personal];
+  await finder.refresh({ searches: ['pharmacie'], radiusKm: 10, overpassKey: 'Ab12cd34' });
+  assert.deepEqual(fetch.urls.slice(1), [personal, OVERPASS_URLS[0]]);
+  assert.equal(finder.status.state, 'ok');
+
+  // A key that is not one: the public servers only.
+  await finder.refresh({ searches: ['zzz'], radiusKm: 10, overpassKey: 'not/a key' });
+  assert.deepEqual(fetch.urls.slice(3), [OVERPASS_URLS[0]]);
 });
 
 test('no located house, or no access to the houses: nothing is asked', async () => {
