@@ -1,0 +1,878 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "E.Leclerc",
+  "description": {
+    "en": "Product recalls that concern your E.Leclerc store, and its opening hours.",
+    "fr": "Rappels de produits qui concernent votre magasin E.Leclerc, et ses horaires.",
+    "de": "Produktrückrufe, die Ihren E.Leclerc-Markt betreffen, und seine Öffnungszeiten.",
+    "es": "Avisos de retirada de productos de su tienda E.Leclerc, y su horario."
+  },
+  "version": "1.0.0",
+  "docker_image": "ghcr.io/prohand/gladys-eleclerc:1.0.0",
+  "gladys_version": ">=5.3.0",
+  "cover_image": "https://raw.githubusercontent.com/prohand/gladys-eleclerc/main/cover.png",
+  "categories": ["services", "notifications"],
+  "keywords": [
+    "leclerc",
+    "e.leclerc",
+    "rappel conso",
+    "rappel produit",
+    "product recall",
+    "supermarché",
+    "horaires",
+    "opening hours",
+    "code-barres",
+    "magasin"
+  ],
+  "countries": ["FR"],
+  "transports": ["cloud"],
+  "config_schema": [
+    {
+      "key": "intro",
+      "type": "section",
+      "label": {
+        "en": "Getting started",
+        "fr": "Pour commencer",
+        "de": "Erste Schritte",
+        "es": "Primeros pasos"
+      },
+      "description": {
+        "en": "Two things, with no account: the product recalls of RappelConso, the official French register, filtered for E.Leclerc, and the opening hours of your store. Type the hours as on its map page, e.g. Mo-Sa 08:30-20:00; PH off.",
+        "fr": "Deux choses, sans compte : les rappels de produits de RappelConso, le registre officiel français, filtrés pour E.Leclerc, et les horaires de votre magasin. Saisissez les horaires comme sur sa fiche de carte, ex. Mo-Sa 08:30-20:00; PH off.",
+        "de": "Zwei Dinge, ohne Konto: die Produktrückrufe von RappelConso, dem offiziellen französischen Register, gefiltert für E.Leclerc, und die Öffnungszeiten Ihres Markts. Geben Sie die Zeiten wie auf seiner Kartenseite ein, z. B. Mo-Sa 08:30-20:00; PH off.",
+        "es": "Dos cosas, sin cuenta: los avisos de retirada de RappelConso, el registro oficial francés, filtrados para E.Leclerc, y el horario de su tienda. Escriba el horario como en su ficha del mapa, p. ej. Mo-Sa 08:30-20:00; PH off."
+      },
+      "links": [
+        {
+          "url": "https://rappel.conso.gouv.fr/",
+          "label": {
+            "en": "RappelConso",
+            "fr": "RappelConso",
+            "de": "RappelConso",
+            "es": "RappelConso"
+          }
+        },
+        {
+          "url": "https://wiki.openstreetmap.org/wiki/Key:opening_hours",
+          "label": {
+            "en": "Opening hours syntax",
+            "fr": "Syntaxe des horaires",
+            "de": "Syntax der Öffnungszeiten",
+            "es": "Sintaxis del horario"
+          }
+        },
+        {
+          "url": "https://github.com/prohand/gladys-eleclerc/blob/main/docs/en.md",
+          "label": {
+            "en": "Documentation",
+            "fr": "Documentation",
+            "de": "Dokumentation",
+            "es": "Documentación"
+          }
+        }
+      ]
+    },
+    {
+      "key": "store_section",
+      "type": "section",
+      "label": {
+        "en": "Your store",
+        "fr": "Votre magasin",
+        "de": "Ihr Markt",
+        "es": "Su tienda"
+      }
+    },
+    {
+      "key": "store_name",
+      "type": "string",
+      "label": {
+        "en": "Store name",
+        "fr": "Nom du magasin",
+        "de": "Name des Markts",
+        "es": "Nombre de la tienda"
+      },
+      "description": {
+        "en": "The name of the store device in Gladys.",
+        "fr": "Le nom de l'appareil magasin dans Gladys.",
+        "de": "Der Name des Markt-Geräts in Gladys.",
+        "es": "El nombre del dispositivo tienda en Gladys."
+      },
+      "placeholder": {
+        "en": "e.g. E.Leclerc Carcassonne",
+        "fr": "ex. E.Leclerc Carcassonne",
+        "de": "z. B. E.Leclerc Carcassonne",
+        "es": "p. ej. E.Leclerc Carcassonne"
+      },
+      "required": false,
+      "default": "E.Leclerc"
+    },
+    {
+      "key": "opening_hours",
+      "type": "string",
+      "label": {
+        "en": "Opening hours",
+        "fr": "Horaires d'ouverture",
+        "de": "Öffnungszeiten",
+        "es": "Horario de apertura"
+      },
+      "description": {
+        "en": "OpenStreetMap syntax: days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed, rules separated by a semicolon.",
+        "fr": "Syntaxe OpenStreetMap : jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé, règles séparées par un point-virgule.",
+        "de": "OpenStreetMap-Syntax: Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen, Regeln durch Semikolon getrennt.",
+        "es": "Sintaxis OpenStreetMap: días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado, reglas separadas por punto y coma."
+      },
+      "placeholder": {
+        "en": "e.g. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off",
+        "fr": "ex. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off",
+        "de": "z. B. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off",
+        "es": "p. ej. Mo-Sa 08:30-20:00; Su 09:00-12:30; PH off"
+      },
+      "required": true,
+      "default": "Mo-Sa 08:30-20:00; PH off"
+    },
+    {
+      "key": "notice_minutes",
+      "type": "number",
+      "label": {
+        "en": "Notice before opening or closing (min)",
+        "fr": "Préavis avant ouverture ou fermeture (min)",
+        "de": "Vorlauf vor Öffnung oder Schließung (Min.)",
+        "es": "Aviso antes de abrir o cerrar (min)"
+      },
+      "description": {
+        "en": "When the \"opens soon\" and \"closes soon\" scene triggers fire.",
+        "fr": "Quand se déclenchent les scènes « ouvre bientôt » et « ferme bientôt ».",
+        "de": "Wann die Szenenauslöser „öffnet bald“ und „schließt bald“ auslösen.",
+        "es": "Cuándo se activan los disparadores «abre pronto» y «cierra pronto»."
+      },
+      "required": false,
+      "default": 30,
+      "min": 5,
+      "max": 180
+    },
+    {
+      "key": "recalls_section",
+      "type": "section",
+      "label": {
+        "en": "Product recalls",
+        "fr": "Rappels de produits",
+        "de": "Produktrückrufe",
+        "es": "Avisos de retirada"
+      }
+    },
+    {
+      "key": "recall_scope",
+      "type": "select",
+      "label": {
+        "en": "Recalls to follow",
+        "fr": "Rappels à suivre",
+        "de": "Zu verfolgende Rückrufe",
+        "es": "Avisos a seguir"
+      },
+      "required": false,
+      "default": "all",
+      "options": [
+        {
+          "value": "all",
+          "label": {
+            "en": "E.Leclerc and all retailers",
+            "fr": "E.Leclerc et tous distributeurs",
+            "de": "E.Leclerc und alle Händler",
+            "es": "E.Leclerc y todos los distribuidores"
+          }
+        },
+        {
+          "value": "leclerc",
+          "label": {
+            "en": "Only those naming E.Leclerc",
+            "fr": "Seulement ceux qui citent E.Leclerc",
+            "de": "Nur die, die E.Leclerc nennen",
+            "es": "Solo los que citan E.Leclerc"
+          }
+        }
+      ]
+    },
+    {
+      "key": "recall_categories",
+      "type": "multi_select",
+      "label": {
+        "en": "Categories (empty: all)",
+        "fr": "Catégories (vide : toutes)",
+        "de": "Kategorien (leer: alle)",
+        "es": "Categorías (vacío: todas)"
+      },
+      "required": false,
+      "options": [
+        {
+          "value": "food",
+          "label": {
+            "en": "Food",
+            "fr": "Alimentation",
+            "de": "Lebensmittel",
+            "es": "Alimentación"
+          }
+        },
+        {
+          "value": "baby",
+          "label": {
+            "en": "Baby & children",
+            "fr": "Bébés-Enfants",
+            "de": "Baby & Kinder",
+            "es": "Bebés y niños"
+          }
+        },
+        {
+          "value": "hygiene",
+          "label": {
+            "en": "Hygiene & beauty",
+            "fr": "Hygiène-Beauté",
+            "de": "Hygiene & Schönheit",
+            "es": "Higiene y belleza"
+          }
+        },
+        {
+          "value": "pets",
+          "label": {
+            "en": "Pets",
+            "fr": "Animaux",
+            "de": "Haustiere",
+            "es": "Animales"
+          }
+        },
+        {
+          "value": "home",
+          "label": {
+            "en": "Home",
+            "fr": "Maison-Habitat",
+            "de": "Haus & Wohnen",
+            "es": "Hogar"
+          }
+        },
+        {
+          "value": "electrical",
+          "label": {
+            "en": "Appliances & tools",
+            "fr": "Appareils électriques, outils",
+            "de": "Elektrogeräte & Werkzeug",
+            "es": "Aparatos y herramientas"
+          }
+        },
+        {
+          "value": "clothing",
+          "label": {
+            "en": "Clothing",
+            "fr": "Vêtements, mode",
+            "de": "Kleidung",
+            "es": "Ropa"
+          }
+        },
+        {
+          "value": "leisure",
+          "label": {
+            "en": "Sports & leisure",
+            "fr": "Sports-loisirs",
+            "de": "Sport & Freizeit",
+            "es": "Deporte y ocio"
+          }
+        },
+        {
+          "value": "vehicles",
+          "label": {
+            "en": "Vehicles",
+            "fr": "Automobiles",
+            "de": "Fahrzeuge",
+            "es": "Vehículos"
+          }
+        },
+        {
+          "value": "other",
+          "label": {
+            "en": "Other",
+            "fr": "Autres",
+            "de": "Sonstiges",
+            "es": "Otros"
+          }
+        }
+      ]
+    },
+    {
+      "key": "recall_days",
+      "type": "number",
+      "label": {
+        "en": "Recalls of the last (days)",
+        "fr": "Rappels des derniers (jours)",
+        "de": "Rückrufe der letzten (Tage)",
+        "es": "Avisos de los últimos (días)"
+      },
+      "required": false,
+      "default": 30,
+      "min": 1,
+      "max": 90
+    },
+    {
+      "key": "refresh_interval",
+      "type": "number",
+      "label": {
+        "en": "Refresh interval (min)",
+        "fr": "Intervalle de rafraîchissement (min)",
+        "de": "Aktualisierungsintervall (Min.)",
+        "es": "Intervalo de actualización (min)"
+      },
+      "description": {
+        "en": "How often RappelConso is read, in minutes.",
+        "fr": "Fréquence de lecture de RappelConso, en minutes.",
+        "de": "Wie oft RappelConso gelesen wird, in Minuten.",
+        "es": "Con qué frecuencia se lee RappelConso, en minutos."
+      },
+      "required": false,
+      "default": 60,
+      "min": 15,
+      "max": 1440
+    }
+  ],
+  "actions": [
+    {
+      "key": "test_connection",
+      "label": {
+        "en": "Test the configuration",
+        "fr": "Tester la configuration",
+        "de": "Konfiguration testen",
+        "es": "Probar la configuración"
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "key": "check_barcode",
+      "label": {
+        "en": "Check a barcode",
+        "fr": "Vérifier un code-barres",
+        "de": "Barcode prüfen",
+        "es": "Comprobar un código de barras"
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "barcode",
+          "type": "string",
+          "label": {
+            "en": "Barcode",
+            "fr": "Code-barres",
+            "de": "Barcode",
+            "es": "Código de barras"
+          },
+          "description": {
+            "en": "The 8 or 13 digits under the bars of the product.",
+            "fr": "Les 8 ou 13 chiffres sous les barres du produit.",
+            "de": "Die 8 oder 13 Ziffern unter den Strichen des Produkts.",
+            "es": "Las 8 o 13 cifras bajo las barras del producto."
+          },
+          "placeholder": {
+            "en": "e.g. 3017620422003",
+            "fr": "ex. 3017620422003",
+            "de": "z. B. 3017620422003",
+            "es": "p. ej. 3017620422003"
+          },
+          "required": true
+        }
+      ]
+    }
+  ],
+  "scene_triggers": [
+    {
+      "key": "product_recalled",
+      "label": {
+        "en": "A product sold at E.Leclerc is recalled",
+        "fr": "Un produit vendu chez E.Leclerc est rappelé",
+        "de": "Ein bei E.Leclerc verkauftes Produkt wird zurückgerufen",
+        "es": "Se retira un producto vendido en E.Leclerc"
+      },
+      "description": {
+        "en": "A new RappelConso notice concerns your store.",
+        "fr": "Une nouvelle fiche RappelConso concerne votre magasin.",
+        "de": "Eine neue RappelConso-Meldung betrifft Ihren Markt.",
+        "es": "Una nueva ficha de RappelConso afecta a su tienda."
+      },
+      "fields": [
+        {
+          "key": "category",
+          "type": "multi_select",
+          "label": {
+            "en": "Category",
+            "fr": "Catégorie",
+            "de": "Kategorie",
+            "es": "Categoría"
+          },
+          "options": [
+            {
+              "value": "food",
+              "label": {
+                "en": "Food",
+                "fr": "Alimentation",
+                "de": "Lebensmittel",
+                "es": "Alimentación"
+              }
+            },
+            {
+              "value": "baby",
+              "label": {
+                "en": "Baby & children",
+                "fr": "Bébés-Enfants",
+                "de": "Baby & Kinder",
+                "es": "Bebés y niños"
+              }
+            },
+            {
+              "value": "hygiene",
+              "label": {
+                "en": "Hygiene & beauty",
+                "fr": "Hygiène-Beauté",
+                "de": "Hygiene & Schönheit",
+                "es": "Higiene y belleza"
+              }
+            },
+            {
+              "value": "pets",
+              "label": {
+                "en": "Pets",
+                "fr": "Animaux",
+                "de": "Haustiere",
+                "es": "Animales"
+              }
+            },
+            {
+              "value": "home",
+              "label": {
+                "en": "Home",
+                "fr": "Maison-Habitat",
+                "de": "Haus & Wohnen",
+                "es": "Hogar"
+              }
+            },
+            {
+              "value": "electrical",
+              "label": {
+                "en": "Appliances & tools",
+                "fr": "Appareils électriques, outils",
+                "de": "Elektrogeräte & Werkzeug",
+                "es": "Aparatos y herramientas"
+              }
+            },
+            {
+              "value": "clothing",
+              "label": {
+                "en": "Clothing",
+                "fr": "Vêtements, mode",
+                "de": "Kleidung",
+                "es": "Ropa"
+              }
+            },
+            {
+              "value": "leisure",
+              "label": {
+                "en": "Sports & leisure",
+                "fr": "Sports-loisirs",
+                "de": "Sport & Freizeit",
+                "es": "Deporte y ocio"
+              }
+            },
+            {
+              "value": "vehicles",
+              "label": {
+                "en": "Vehicles",
+                "fr": "Automobiles",
+                "de": "Fahrzeuge",
+                "es": "Vehículos"
+              }
+            },
+            {
+              "value": "other",
+              "label": {
+                "en": "Other",
+                "fr": "Autres",
+                "de": "Sonstiges",
+                "es": "Otros"
+              }
+            }
+          ]
+        },
+        {
+          "key": "sold_at",
+          "type": "multi_select",
+          "label": {
+            "en": "Sold at",
+            "fr": "Vendu chez",
+            "de": "Verkauft bei",
+            "es": "Vendido en"
+          },
+          "options": [
+            {
+              "value": "leclerc",
+              "label": {
+                "en": "E.Leclerc named",
+                "fr": "E.Leclerc cité",
+                "de": "E.Leclerc genannt",
+                "es": "E.Leclerc citado"
+              }
+            },
+            {
+              "value": "all_retailers",
+              "label": {
+                "en": "All retailers",
+                "fr": "Tous distributeurs",
+                "de": "Alle Händler",
+                "es": "Todos los distribuidores"
+              }
+            }
+          ]
+        }
+      ],
+      "variables": [
+        {
+          "key": "product",
+          "type": "string",
+          "label": {
+            "en": "Product",
+            "fr": "Produit",
+            "de": "Produkt",
+            "es": "Producto"
+          }
+        },
+        {
+          "key": "brand",
+          "type": "string",
+          "label": {
+            "en": "Brand",
+            "fr": "Marque",
+            "de": "Marke",
+            "es": "Marca"
+          }
+        },
+        {
+          "key": "reason",
+          "type": "string",
+          "label": {
+            "en": "Reason",
+            "fr": "Motif",
+            "de": "Grund",
+            "es": "Motivo"
+          }
+        },
+        {
+          "key": "risks",
+          "type": "string",
+          "label": {
+            "en": "Risks",
+            "fr": "Risques",
+            "de": "Risiken",
+            "es": "Riesgos"
+          }
+        },
+        {
+          "key": "link",
+          "type": "string",
+          "label": {
+            "en": "Notice link",
+            "fr": "Lien de la fiche",
+            "de": "Link zur Meldung",
+            "es": "Enlace de la ficha"
+          }
+        },
+        {
+          "key": "reference",
+          "type": "string",
+          "label": {
+            "en": "Notice number",
+            "fr": "Numéro de fiche",
+            "de": "Meldungsnummer",
+            "es": "Número de ficha"
+          }
+        }
+      ]
+    },
+    {
+      "key": "store_opening_soon",
+      "label": {
+        "en": "The store opens soon",
+        "fr": "Le magasin ouvre bientôt",
+        "de": "Der Markt öffnet bald",
+        "es": "La tienda abre pronto"
+      },
+      "description": {
+        "en": "The store opens within the configured notice.",
+        "fr": "Le magasin ouvre dans le délai de préavis configuré.",
+        "de": "Der Markt öffnet innerhalb des eingestellten Vorlaufs.",
+        "es": "La tienda abre dentro del aviso configurado."
+      },
+      "variables": [
+        {
+          "key": "store_name",
+          "type": "string",
+          "label": {
+            "en": "Store name",
+            "fr": "Nom du magasin",
+            "de": "Name des Markts",
+            "es": "Nombre de la tienda"
+          }
+        },
+        {
+          "key": "time",
+          "type": "string",
+          "label": {
+            "en": "Time (HH:MM)",
+            "fr": "Heure (HH:MM)",
+            "de": "Uhrzeit (HH:MM)",
+            "es": "Hora (HH:MM)"
+          }
+        },
+        {
+          "key": "minutes_left",
+          "type": "number",
+          "label": {
+            "en": "Minutes left",
+            "fr": "Minutes restantes",
+            "de": "Verbleibende Minuten",
+            "es": "Minutos restantes"
+          }
+        }
+      ]
+    },
+    {
+      "key": "store_closing_soon",
+      "label": {
+        "en": "The store closes soon",
+        "fr": "Le magasin ferme bientôt",
+        "de": "Der Markt schließt bald",
+        "es": "La tienda cierra pronto"
+      },
+      "description": {
+        "en": "The store closes within the configured notice.",
+        "fr": "Le magasin ferme dans le délai de préavis configuré.",
+        "de": "Der Markt schließt innerhalb des eingestellten Vorlaufs.",
+        "es": "La tienda cierra dentro del aviso configurado."
+      },
+      "variables": [
+        {
+          "key": "store_name",
+          "type": "string",
+          "label": {
+            "en": "Store name",
+            "fr": "Nom du magasin",
+            "de": "Name des Markts",
+            "es": "Nombre de la tienda"
+          }
+        },
+        {
+          "key": "time",
+          "type": "string",
+          "label": {
+            "en": "Time (HH:MM)",
+            "fr": "Heure (HH:MM)",
+            "de": "Uhrzeit (HH:MM)",
+            "es": "Hora (HH:MM)"
+          }
+        },
+        {
+          "key": "minutes_left",
+          "type": "number",
+          "label": {
+            "en": "Minutes left",
+            "fr": "Minutes restantes",
+            "de": "Verbleibende Minuten",
+            "es": "Minutos restantes"
+          }
+        }
+      ]
+    }
+  ],
+  "scene_actions": [
+    {
+      "key": "check_barcode",
+      "label": {
+        "en": "Check a barcode",
+        "fr": "Vérifier un code-barres",
+        "de": "Barcode prüfen",
+        "es": "Comprobar un código de barras"
+      },
+      "description": {
+        "en": "Look a product up in RappelConso.",
+        "fr": "Cherche un produit dans RappelConso.",
+        "de": "Sucht ein Produkt in RappelConso.",
+        "es": "Busca un producto en RappelConso."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "barcode",
+          "type": "string",
+          "label": {
+            "en": "Barcode",
+            "fr": "Code-barres",
+            "de": "Barcode",
+            "es": "Código de barras"
+          },
+          "description": {
+            "en": "The 8 or 13 digits under the bars of the product.",
+            "fr": "Les 8 ou 13 chiffres sous les barres du produit.",
+            "de": "Die 8 oder 13 Ziffern unter den Strichen des Produkts.",
+            "es": "Las 8 o 13 cifras bajo las barras del producto."
+          },
+          "placeholder": {
+            "en": "e.g. 3017620422003",
+            "fr": "ex. 3017620422003",
+            "de": "z. B. 3017620422003",
+            "es": "p. ej. 3017620422003"
+          },
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "key": "recalled",
+          "type": "boolean",
+          "label": {
+            "en": "Recalled",
+            "fr": "Rappelé",
+            "de": "Zurückgerufen",
+            "es": "Retirado"
+          }
+        },
+        {
+          "key": "product",
+          "type": "string",
+          "label": {
+            "en": "Product",
+            "fr": "Produit",
+            "de": "Produkt",
+            "es": "Producto"
+          }
+        },
+        {
+          "key": "reason",
+          "type": "string",
+          "label": {
+            "en": "Reason",
+            "fr": "Motif",
+            "de": "Grund",
+            "es": "Motivo"
+          }
+        },
+        {
+          "key": "link",
+          "type": "string",
+          "label": {
+            "en": "Notice link",
+            "fr": "Lien de la fiche",
+            "de": "Link zur Meldung",
+            "es": "Enlace de la ficha"
+          }
+        }
+      ]
+    },
+    {
+      "key": "is_store_open",
+      "label": {
+        "en": "Is the store open?",
+        "fr": "Le magasin est-il ouvert ?",
+        "de": "Ist der Markt geöffnet?",
+        "es": "¿Está abierta la tienda?"
+      },
+      "description": {
+        "en": "Open now, and the time it opens or closes next.",
+        "fr": "Ouvert maintenant, et l'heure de la prochaine ouverture ou fermeture.",
+        "de": "Jetzt geöffnet, und die nächste Öffnungs- oder Schließzeit.",
+        "es": "Abierta ahora, y la hora de la próxima apertura o cierre."
+      },
+      "timeout_seconds": 5,
+      "outputs": [
+        {
+          "key": "open",
+          "type": "boolean",
+          "label": {
+            "en": "Open",
+            "fr": "Ouvert",
+            "de": "Geöffnet",
+            "es": "Abierta"
+          }
+        },
+        {
+          "key": "next_change",
+          "type": "string",
+          "label": {
+            "en": "Next change (HH:MM)",
+            "fr": "Prochain changement (HH:MM)",
+            "de": "Nächste Änderung (HH:MM)",
+            "es": "Próximo cambio (HH:MM)"
+          }
+        },
+        {
+          "key": "minutes_to_change",
+          "type": "number",
+          "label": {
+            "en": "Minutes until then",
+            "fr": "Minutes d'ici là",
+            "de": "Minuten bis dahin",
+            "es": "Minutos hasta entonces"
+          }
+        }
+      ]
+    }
+  ],
+  "widgets": [
+    {
+      "key": "store_hours",
+      "label": {
+        "en": "Store hours",
+        "fr": "Horaires du magasin",
+        "de": "Öffnungszeiten",
+        "es": "Horario de la tienda"
+      },
+      "description": {
+        "en": "Open or closed, until when, and today's hours.",
+        "fr": "Ouvert ou fermé, jusqu'à quand, et les horaires du jour.",
+        "de": "Geöffnet oder geschlossen, bis wann, und die heutigen Zeiten.",
+        "es": "Abierta o cerrada, hasta cuándo, y el horario de hoy."
+      },
+      "icon": "shopping-cart"
+    },
+    {
+      "key": "product_recalls",
+      "label": {
+        "en": "Product recalls",
+        "fr": "Rappels de produits",
+        "de": "Produktrückrufe",
+        "es": "Avisos de retirada"
+      },
+      "description": {
+        "en": "The latest recalls for your store, and a barcode check.",
+        "fr": "Les derniers rappels pour votre magasin, et la vérification d'un code-barres.",
+        "de": "Die neuesten Rückrufe für Ihren Markt und eine Barcode-Prüfung.",
+        "es": "Los últimos avisos para su tienda, y la comprobación de un código."
+      },
+      "icon": "alert-triangle",
+      "settings": [
+        {
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Recalls shown",
+            "fr": "Rappels affichés",
+            "de": "Angezeigte Rückrufe",
+            "es": "Avisos mostrados"
+          },
+          "description": {
+            "en": "How many recalls are listed (0 to 8).",
+            "fr": "Nombre de rappels listés (0 à 8).",
+            "de": "Wie viele Rückrufe aufgelistet werden (0 bis 8).",
+            "es": "Cuántos avisos se listan (0 a 8)."
+          },
+          "required": false,
+          "default": 5,
+          "min": 0,
+          "max": 8
+        }
+      ],
+      "action_timeout_seconds": 30
+    }
+  ]
+}
