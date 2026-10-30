@@ -29,15 +29,19 @@ test('auto and auto: words are lookups, anything else is hours', () => {
 
 test('stores to look up wait for their hours, the others are read at once', () => {
   const { stores, errors } = parseStores(
-    'Leclerc = auto | Pharmacie = auto: Pharmacie du Marché | Bio = 24/7',
+    'Leclerc = auto | Pharmacie = auto: Pharmacie du Marché | Bio = 24/7 | Lidl | Super U = | auto: Boulangerie Dupont | auto',
   );
-  assert.deepEqual(errors, []);
+  assert.deepEqual(errors, ['auto']);
   assert.deepEqual(
-    stores.map((store) => [store.id, store.search, store.error?.reason ?? null]),
+    stores.map((store) => [store.id, store.name, store.search, store.error?.reason ?? null]),
     [
-      ['leclerc', 'leclerc', 'pending'],
-      ['pharmacie', 'pharmacie du marche', 'pending'],
-      ['bio', null, null],
+      ['leclerc', 'Leclerc', 'leclerc', 'pending'],
+      ['pharmacie', 'Pharmacie', 'pharmacie du marche', 'pending'],
+      ['bio', 'Bio', null, null],
+      // A name alone, or nothing after `=`: looked up, the default.
+      ['lidl', 'Lidl', 'lidl', 'pending'],
+      ['super-u', 'Super U', 'super u', 'pending'],
+      ['boulangerie-dupont', 'Boulangerie Dupont', 'boulangerie dupont', 'pending'],
     ],
   );
 });

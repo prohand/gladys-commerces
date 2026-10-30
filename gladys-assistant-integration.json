@@ -75,10 +75,10 @@
         "es": "Sus comercios"
       },
       "description": {
-        "en": "One shop per entry: a name, an equals sign, then its hours in the OpenStreetMap syntax (days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed) or auto: the hours are then looked up on OpenStreetMap, at the shop of that name nearest to your Gladys houses (auto: other words to look for another name). Shops separated by a vertical bar |.",
-        "fr": "Un commerce par entrée : un nom, un signe égal, puis ses horaires en syntaxe OpenStreetMap (jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé) ou auto : les horaires sont alors cherchés sur OpenStreetMap, au commerce de ce nom le plus proche de vos maisons Gladys (auto: d'autres mots pour chercher un autre nom). Commerces séparés par une barre verticale |.",
-        "de": "Ein Geschäft pro Eintrag: ein Name, ein Gleichheitszeichen, dann seine Zeiten in OpenStreetMap-Syntax (Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen) oder auto: Die Zeiten werden dann auf OpenStreetMap gesucht, beim Geschäft dieses Namens, das Ihren Gladys-Häusern am nächsten liegt (auto: andere Wörter, um einen anderen Namen zu suchen). Geschäfte durch einen senkrechten Strich | getrennt.",
-        "es": "Un comercio por entrada: un nombre, un signo igual, y luego su horario en sintaxis OpenStreetMap (días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado) o auto: el horario se busca entonces en OpenStreetMap, en el comercio con ese nombre más cercano a sus casas de Gladys (auto: otras palabras para buscar otro nombre). Comercios separados por una barra vertical |."
+        "en": "One shop per entry: a name alone, the hours are then looked up on OpenStreetMap, at the shop of that name nearest to your Gladys houses (Name = auto: other words to look for another name), or a name, an equals sign and its hours in the OpenStreetMap syntax (days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed). Shops separated by a vertical bar |.",
+        "fr": "Un commerce par entrée : un nom seul, les horaires sont alors cherchés sur OpenStreetMap, au commerce de ce nom le plus proche de vos maisons Gladys (Nom = auto: d'autres mots pour chercher un autre nom), ou un nom, un signe égal et ses horaires en syntaxe OpenStreetMap (jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé). Commerces séparés par une barre verticale |.",
+        "de": "Ein Geschäft pro Eintrag: ein Name allein, die Zeiten werden dann auf OpenStreetMap gesucht, beim Geschäft dieses Namens, das Ihren Gladys-Häusern am nächsten liegt (Name = auto: andere Wörter, um einen anderen Namen zu suchen), oder ein Name, ein Gleichheitszeichen und seine Zeiten in OpenStreetMap-Syntax (Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen). Geschäfte durch einen senkrechten Strich | getrennt.",
+        "es": "Un comercio por entrada: un nombre solo, el horario se busca entonces en OpenStreetMap, en el comercio con ese nombre más cercano a sus casas de Gladys (Nombre = auto: otras palabras para buscar otro nombre), o un nombre, un signo igual y su horario en sintaxis OpenStreetMap (días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado). Comercios separados por una barra vertical |."
       }
     },
     {
@@ -91,10 +91,10 @@
         "es": "Comercios y horario"
       },
       "placeholder": {
-        "en": "e.g. Leclerc = auto | Pharmacy = Mo-Fr 09:00-19:00",
-        "fr": "ex. Leclerc = auto | Pharmacie = Mo-Fr 09:00-19:00",
-        "de": "z. B. Leclerc = auto | Apotheke = Mo-Fr 09:00-19:00",
-        "es": "p. ej. Leclerc = auto | Farmacia = Mo-Fr 09:00-19:00"
+        "en": "e.g. Leclerc | Pharmacy = Mo-Fr 09:00-19:00",
+        "fr": "ex. Leclerc | Pharmacie = Mo-Fr 09:00-19:00",
+        "de": "z. B. Leclerc | Apotheke = Mo-Fr 09:00-19:00",
+        "es": "p. ej. Leclerc | Farmacia = Mo-Fr 09:00-19:00"
       },
       "required": false,
       "default": ""
@@ -109,10 +109,10 @@
         "es": "Radio de búsqueda alrededor de las casas (km)"
       },
       "description": {
-        "en": "For the shops written auto: how far from a Gladys house they are looked for on OpenStreetMap.",
-        "fr": "Pour les commerces écrits auto : à quelle distance d'une maison Gladys ils sont cherchés sur OpenStreetMap.",
-        "de": "Für die mit auto eingetragenen Geschäfte: wie weit von einem Gladys-Haus sie auf OpenStreetMap gesucht werden.",
-        "es": "Para los comercios escritos auto: a qué distancia de una casa de Gladys se buscan en OpenStreetMap."
+        "en": "For the shops without hours: how far from a Gladys house they are looked for on OpenStreetMap.",
+        "fr": "Pour les commerces sans horaires : à quelle distance d'une maison Gladys ils sont cherchés sur OpenStreetMap.",
+        "de": "Für die Geschäfte ohne Zeiten: wie weit von einem Gladys-Haus sie auf OpenStreetMap gesucht werden.",
+        "es": "Para los comercios sin horario: a qué distancia de una casa de Gladys se buscan en OpenStreetMap."
       },
       "required": false,
       "default": 10,

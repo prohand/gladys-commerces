@@ -68,7 +68,7 @@ test('a new configuration re-reads the stores and the cards', async () => {
 
 test('action test_configuration reports every store and the cards', async () => {
   const { gladys } = await setup({
-    config: { stores: `${STORES} | Bio = Lu 9h | oops`, loyalty_cards: `${CARDS}; Zoé=abc` },
+    config: { stores: `${STORES} | Bio = Lu 9h | auto`, loyalty_cards: `${CARDS}; Zoé=abc` },
   });
   const ack = await gladys.fake.action('test_configuration', {});
   assert.equal(ack.success, true);
@@ -76,7 +76,10 @@ test('action test_configuration reports every store and the cards', async () => 
   assert.equal(lines[0], 'Leclerc : Ouvert, ferme à 20:00.');
   assert.equal(lines[1], 'Pharmacie : Fermé, ouvre lundi à 09:00.');
   assert.match(lines[2], /^Bio : Les horaires ne sont pas compris/);
-  assert.equal(lines[3], 'Non compris (Nom = horaires ou Nom = auto attendu) : oops.');
+  assert.equal(
+    lines[3],
+    'Non compris, il manque le nom du commerce (ex. Leclerc, ou Leclerc = Mo-Sa 08:30-20:00) : auto.',
+  );
   assert.equal(
     lines[4],
     '2 carte(s) de fidélité : Marie (EAN-13), Paul (Code 128). Non compris : Zoé=abc.',
@@ -87,7 +90,7 @@ test('action test_configuration reports every store and the cards', async () => 
 test('stores written auto get their hours from OpenStreetMap, near the houses', async () => {
   const { gladys, fetch } = await setup({
     config: {
-      stores: 'Leclerc = auto | Boulangerie = auto: Boulangerie Dupont | Bio = 24/7 | Lidl = auto',
+      stores: 'Leclerc | Boulangerie = auto: Boulangerie Dupont | Bio = 24/7 | Lidl =',
     },
   });
   assert.equal(fetch.queries.length, 1);

@@ -8,7 +8,7 @@ Diese Integration bringt zwei Dinge zu den Geschäften, in die Sie gehen, in Gla
   der Kasse mit dem Handy, und ihr Guthaben.
 
 Alles wird in Gladys berechnet: kein Konto, kein Passwort. Der einzige Aufruf nach
-außen ist optional: die Zeiten der mit `auto` eingetragenen Geschäfte auf
+außen ist optional: die Zeiten der ohne Zeiten eingetragenen Geschäfte auf
 OpenStreetMap suchen.
 
 ## Einrichtung
@@ -16,12 +16,12 @@ OpenStreetMap suchen.
 Öffnen Sie **Integrationen**, suchen Sie die Integration, installieren Sie sie und
 füllen Sie dann den Bildschirm **Konfiguration** aus.
 
-| Feld                         | Was eintragen                                                                                   |
-| ---------------------------- | ----------------------------------------------------------------------------------------------- |
-| Geschäfte und Öffnungszeiten | Ihre Geschäfte und ihre Zeiten (siehe unten). Leer, wenn Sie nur Karten wollen.                 |
-| Suchradius ... (km)          | Für die mit `auto` eingetragenen Geschäfte: wie weit von einem Haus gesucht wird. Standard: 10. |
-| Vorlauf vor ... (Min.)       | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.                            |
-| Kartennummern                | Ihre Kundenkarten (siehe unten). Leer lassen, wenn Sie keine haben.                             |
+| Feld                         | Was eintragen                                                                      |
+| ---------------------------- | ---------------------------------------------------------------------------------- |
+| Geschäfte und Öffnungszeiten | Ihre Geschäfte und ihre Zeiten (siehe unten). Leer, wenn Sie nur Karten wollen.    |
+| Suchradius ... (km)          | Für die Geschäfte ohne Zeiten: wie weit von einem Haus gesucht wird. Standard: 10. |
+| Vorlauf vor ... (Min.)       | Wann „öffnet bald“ / „schließt bald“ auslösen. Standard: 30 Minuten.               |
+| Kartennummern                | Ihre Kundenkarten (siehe unten). Leer lassen, wenn Sie keine haben.                |
 
 Klicken Sie dann auf **Konfiguration testen**: Die Antwort sagt Geschäft für Geschäft,
 ob es geöffnet ist, und welche Karten verstanden wurden.
@@ -30,7 +30,7 @@ ob es geöffnet ist, und welche Karten verstanden wurden.
 
 ### Geschäfte und Öffnungszeiten
 
-Ein Geschäft pro Eintrag: ein Name, `=`, seine Zeiten. Trennen Sie die Geschäfte mit
+Ein Geschäft pro Eintrag: ein Name, dann `=` und seine Zeiten, wenn Sie sie eingeben wollen. Trennen Sie die Geschäfte mit
 `|`:
 
 ```
@@ -58,7 +58,7 @@ Der Name kennzeichnet das Geschäft: Umbenennen legt ein neues Gerät in Gladys 
 
 #### Automatisch gefundene Zeiten
 
-Schreiben Sie `auto` statt der Zeiten: `Leclerc = auto`. Die Integration sucht dann
+Schreiben Sie nur den Namen: `Leclerc` (oder `Leclerc = auto`). Die Integration sucht dann
 auf OpenStreetMap das Geschäft dieses Namens, das Ihren Gladys-Häusern am nächsten
 liegt (alle Häuser mit Standort, festgelegt unter **Einstellungen → Häuser**), und
 übernimmt seine Zeiten. Um andere Wörter als den Namen zu suchen, schreiben Sie sie
@@ -157,7 +157,7 @@ Prüfziffer), sonst ein Code 128. Kassenscanner lesen beide.
 Die Guthaben werden im Volume `/data` der Integration (`cards.json`) und als
 Gladys-Zustände gespeichert; sie verlassen Ihr Gladys nie.
 
-Nur für die mit `auto` eingetragenen Geschäfte: Die gesuchten Wörter und der Standort
+Nur für die ohne Zeiten eingetragenen Geschäfte: Die gesuchten Wörter und der Standort
 Ihrer Häuser (ein Bereich im Suchradius um jedes) werden einmal am Tag an die
 Overpass-API von OpenStreetMap (`overpass-api.de`) gesendet. Die gefundenen Zeiten
-werden in `/data/hours.json` gespeichert. Ohne `auto` wird nichts gesendet.
+werden in `/data/hours.json` gespeichert. Haben alle Geschäfte eingegebene Zeiten, wird nichts gesendet.

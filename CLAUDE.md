@@ -60,8 +60,8 @@ src/capabilities/       actions, scenes, widgets
   keys), config keys, action / trigger / scene action / widget keys and `mode` values are
   stored by users. Never rename them, never change `storeSlug`.
 - **Config syntax**: shops `Name = hours | Name = hours` (`|` and `=` never appear in the
-  supported opening_hours subset), `Name = auto` or `Name = auto: words` for a lookup on
-  OpenStreetMap, cards `Name=number; Name=number`. The examples of the
+  supported opening_hours subset), a name alone (= `Name = auto`), or `Name = auto: words`, for a
+  lookup on OpenStreetMap (the default), cards `Name=number; Name=number`. The examples of the
   manifest placeholders and of the docs are parsed by the tests.
 - **Hours are on the Europe/Paris clock**, whatever the container clock (UTC).
 - **Opening state is a read-only switch**: on an `opening-sensor`, Gladys reads 1 as closed.

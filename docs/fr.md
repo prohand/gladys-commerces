@@ -8,7 +8,7 @@ Cette intégration apporte dans Gladys deux choses sur les commerces où vous al
 
 Tout est calculé dans Gladys : aucun compte, aucun mot de passe. Le seul appel
 externe est facultatif : chercher sur OpenStreetMap les horaires des commerces que
-vous écrivez `auto`.
+vous écrivez sans horaires.
 
 ## Installation
 
@@ -18,7 +18,7 @@ l'écran **Configuration**.
 | Champ                       | Que mettre                                                                                       |
 | --------------------------- | ------------------------------------------------------------------------------------------------ |
 | Commerces et horaires       | Vos commerces et leurs horaires (voir plus bas). Vide si vous voulez seulement les cartes.       |
-| Rayon de recherche ... (km) | Pour les commerces écrits `auto` : à quelle distance d'une maison les chercher. Par défaut : 10. |
+| Rayon de recherche ... (km) | Pour les commerces sans horaires : à quelle distance d'une maison les chercher. Par défaut : 10. |
 | Préavis avant ... (min)     | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.                 |
 | Numéros de carte            | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                              |
 
@@ -29,7 +29,7 @@ Enfin, ouvrez l'onglet **Découverte** de l'intégration et créez les appareils
 
 ### Commerces et horaires
 
-Un commerce par entrée : un nom, `=`, ses horaires. Séparez les commerces par `|` :
+Un commerce par entrée : un nom, puis `=` et ses horaires si vous voulez les écrire. Séparez les commerces par `|` :
 
 ```
 Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00 | Boulangerie = Tu-Su 07:00-13:00,15:30-19:30
@@ -56,7 +56,7 @@ Le nom identifie le commerce : le renommer crée un nouvel appareil dans Gladys.
 
 #### Horaires trouvés automatiquement
 
-Écrivez `auto` à la place des horaires : `Leclerc = auto`. L'intégration cherche
+Écrivez seulement le nom : `Leclerc` (ou `Leclerc = auto`). L'intégration cherche
 alors sur OpenStreetMap le commerce de ce nom le plus proche de vos maisons Gladys
 (toutes les maisons dont l'emplacement est renseigné dans **Paramètres → Maisons**),
 et prend ses horaires. Pour chercher d'autres mots que le nom, écrivez-les après
@@ -154,7 +154,7 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 Les cagnottes sont gardées dans le volume `/data` de l'intégration (`cards.json`) et
 comme états Gladys ; elles ne sortent jamais de votre Gladys.
 
-Pour les commerces écrits `auto` seulement : les mots cherchés et l'emplacement de vos
+Pour les commerces écrits sans horaires seulement : les mots cherchés et l'emplacement de vos
 maisons (une zone du rayon de recherche autour de chacune) sont envoyés à l'API
 Overpass d'OpenStreetMap (`overpass-api.de`), une fois par jour. Les horaires trouvés
-sont gardés dans `/data/hours.json`. Sans `auto`, rien n'est envoyé.
+sont gardés dans `/data/hours.json`. Si tous les commerces ont leurs horaires écrits, rien n'est envoyé.

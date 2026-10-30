@@ -8,8 +8,9 @@
 //
 // Stores are separated by `|` (or a line break), the name comes before `=`.
 // `|` and `=` never appear in the opening_hours subset read by hours.js.
-// `Name = auto` (or `Name = auto: words`) leaves the hours to OpenStreetMap,
-// around the houses of Gladys: see finder.js, the only network call.
+// A name alone (or `Name = auto`, `Name = auto: words`) leaves the hours to
+// OpenStreetMap, around the houses of Gladys: see finder.js, the only
+// network call.
 //
 // Once a minute the watcher publishes, for each store, whether it is open and
 // the minutes until that changes, and fires the "opens soon" / "closes soon"
@@ -85,10 +86,17 @@ export function parseStores(text) {
     .map((part) => part.trim())
     .filter(Boolean)) {
     const separator = entry.indexOf('=');
-    const name = separator === -1 ? '' : entry.slice(0, separator).trim();
-    const hours = separator === -1 ? '' : entry.slice(separator + 1).trim();
+    let name = (separator === -1 ? entry : entry.slice(0, separator)).trim();
+    // No hours: looked up on OpenStreetMap, the default.
+    const hours = (separator === -1 ? '' : entry.slice(separator + 1).trim()) || 'auto';
+    // `auto: words` alone: the words name the store. `auto` alone names no
+    // store (not a shop called "auto"): an error that says so.
+    const bare = separator === -1 ? /^auto\s*(?::\s*(.*))?$/i.exec(name) : null;
+    if (bare) {
+      name = bare[1]?.trim() ?? '';
+    }
     const id = storeSlug(name);
-    if (!id || !hours) {
+    if (!id) {
       errors.push(entry);
       continue;
     }
@@ -153,7 +161,7 @@ export class StoreWatcher {
       logger.warn(`Opening hours of "${store.name}" not understood: ${store.error.message}`);
     }
     for (const entry of this.errors) {
-      logger.warn(`Store not understood: "${entry}"`);
+      logger.warn(`Store not understood: "${entry}" (expected: Name, or Name = hours)`);
     }
   }
 

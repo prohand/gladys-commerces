@@ -75,10 +75,10 @@ export function describeStores(watcher) {
       const wrong = watcher.errors.join(' / ');
       lines.push(
         pick(language, {
-          en: `Not understood (Name = hours or Name = auto expected): ${wrong}.`,
-          fr: `Non compris (Nom = horaires ou Nom = auto attendu) : ${wrong}.`,
-          de: `Nicht verstanden (Name = Zeiten oder Name = auto erwartet): ${wrong}.`,
-          es: `No entendido (se espera Nombre = horario o Nombre = auto): ${wrong}.`,
+          en: `Not understood, a shop name is missing (e.g. Leclerc, or Leclerc = Mo-Sa 08:30-20:00): ${wrong}.`,
+          fr: `Non compris, il manque le nom du commerce (ex. Leclerc, ou Leclerc = Mo-Sa 08:30-20:00) : ${wrong}.`,
+          de: `Nicht verstanden, der Name des Geschäfts fehlt (z. B. Leclerc oder Leclerc = Mo-Sa 08:30-20:00): ${wrong}.`,
+          es: `No entendido, falta el nombre del comercio (p. ej. Leclerc, o Leclerc = Mo-Sa 08:30-20:00): ${wrong}.`,
         }),
       );
     }

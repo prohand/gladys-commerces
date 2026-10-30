@@ -20,7 +20,7 @@ async function setup(config = {}, iso = '2026-10-30T18:00:00Z') {
 
 test('stores: names, hours, separators; a store keeps its hours error', () => {
   const { stores, errors } = parseStores(
-    'Leclerc = Mo-Sa 08:30-20:00 | Pharmacie Centrale=Lu-Ve 9h\nDéchetterie = We,Sa 09:00-12:00 | oops',
+    'Leclerc = Mo-Sa 08:30-20:00 | Pharmacie Centrale=Lu-Ve 9h\nDéchetterie = We,Sa 09:00-12:00 | auto | = 24/7',
   );
   assert.deepEqual(
     stores.map((store) => [store.id, store.name, Boolean(store.schedule), Boolean(store.error)]),
@@ -30,7 +30,7 @@ test('stores: names, hours, separators; a store keeps its hours error', () => {
       ['dechetterie', 'Déchetterie', true, false],
     ],
   );
-  assert.deepEqual(errors, ['oops']);
+  assert.deepEqual(errors, ['auto', '= 24/7']);
 });
 
 test('stores: a duplicate name is dropped, ten at most', () => {
