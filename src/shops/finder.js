@@ -342,8 +342,9 @@ export class HoursFinder {
     this.signature = null;
     this.checkedAt = 0;
     this.failedAt = 0;
-    // Lookups that went on the network, to know whether one ran meanwhile.
-    this.tries = 0;
+    // Lookups that failed on the network, to know whether one failed while a
+    // request waited.
+    this.failures = 0;
     this.loaded = false;
     // How the last lookup went, for the test action: `idle` (never asked),
     // `ok`, `no_house`, `no_access` or `unreachable` (with `message`).
@@ -378,7 +379,7 @@ export class HoursFinder {
   refresh(request) {
     // One lookup at a time: a new configuration saved during a lookup waits.
     const previous = this.running ?? Promise.resolve();
-    const tries = this.tries;
+    const failures = this.failures;
     const running = previous
       .catch(() => {})
       .then(() =>
@@ -390,7 +391,7 @@ export class HoursFinder {
           known: unique(request.known).filter((key) => KEY.test(key)),
           // Asked during a lookup that failed: that lookup was the try, a
           // second query at once would only load a busy server again.
-          force: Boolean(request.force) && (this.tries === tries || this.failedAt === 0),
+          force: Boolean(request.force) && this.failures === failures,
         }),
       )
       .finally(() => {
@@ -462,13 +463,13 @@ export class HoursFinder {
     }
 
     let elements;
-    this.tries += 1;
     try {
       elements = await this.overpass(
         overpassQuery({ searches, kinds, known, houses, radiusMeters: radius }),
       );
     } catch (err) {
       logger.warn(`OpenStreetMap lookup failed: ${err.message}`);
+      this.failures += 1;
       this.failedAt = now;
       this.status = {
         state: 'unreachable',

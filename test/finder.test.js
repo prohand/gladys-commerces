@@ -171,10 +171,19 @@ test('network down: the hours found stay, the others wait an hour', async () => 
 test('asked during a lookup that fails: no second query at once', async () => {
   const { finder, fetch } = finderSetup();
   fetch.down = true;
-  await Promise.all([
-    finder.refresh({ searches: ['leclerc'], radiusKm: 10 }),
-    finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true }),
-  ]);
+  const offline = fetch;
+  let asked;
+  const sent = new Promise((resolve) => (asked = resolve));
+  // The scan comes while the query is already on the network.
+  finder.fetch = async (...args) => {
+    asked();
+    await new Promise((resolve) => setImmediate(resolve));
+    return offline(...args);
+  };
+  const first = finder.refresh({ searches: ['leclerc'], radiusKm: 10 });
+  await sent;
+  await Promise.all([first, finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true })]);
+  finder.fetch = fetch;
   // One lookup: the main server, then the fallback.
   assert.equal(fetch.queries.length, 2);
   assert.equal(finder.status.state, 'unreachable');
