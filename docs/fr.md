@@ -6,19 +6,21 @@ Cette intégration apporte dans Gladys deux choses sur les commerces où vous al
 - vos **cartes de fidélité**, de toutes enseignes : leur code-barres sur le tableau de
   bord, à scanner en caisse depuis votre téléphone, et leur cagnotte.
 
-Tout est calculé dans Gladys : aucun compte, aucun mot de passe, rien n'est envoyé
-sur internet.
+Tout est calculé dans Gladys : aucun compte, aucun mot de passe. Le seul appel
+externe est facultatif : chercher sur OpenStreetMap les horaires des commerces que
+vous écrivez `auto`.
 
 ## Installation
 
 Ouvrez **Intégrations**, cherchez l'intégration, installez-la, puis remplissez
 l'écran **Configuration**.
 
-| Champ                   | Que mettre                                                                                 |
-| ----------------------- | ------------------------------------------------------------------------------------------ |
-| Commerces et horaires   | Vos commerces et leurs horaires (voir plus bas). Vide si vous voulez seulement les cartes. |
-| Préavis avant ... (min) | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.           |
-| Numéros de carte        | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                        |
+| Champ                       | Que mettre                                                                                       |
+| --------------------------- | ------------------------------------------------------------------------------------------------ |
+| Commerces et horaires       | Vos commerces et leurs horaires (voir plus bas). Vide si vous voulez seulement les cartes.       |
+| Rayon de recherche ... (km) | Pour les commerces écrits `auto` : à quelle distance d'une maison les chercher. Par défaut : 10. |
+| Préavis avant ... (min)     | Quand se déclenchent « ouvre bientôt » / « ferme bientôt ». Par défaut : 30 min.                 |
+| Numéros de carte            | Vos cartes de fidélité (voir plus bas). Vide si vous n'en avez pas.                              |
 
 Cliquez ensuite sur **Tester la configuration** : la réponse dit, commerce par
 commerce, s'il est ouvert, et quelles cartes ont été comprises.
@@ -51,6 +53,26 @@ Pâques, Ascension et Pentecôte compris). Les heures sont lues à l'heure de Pa
 10 commerces au plus.
 
 Le nom identifie le commerce : le renommer crée un nouvel appareil dans Gladys.
+
+#### Horaires trouvés automatiquement
+
+Écrivez `auto` à la place des horaires : `Leclerc = auto`. L'intégration cherche
+alors sur OpenStreetMap le commerce de ce nom le plus proche de vos maisons Gladys
+(toutes les maisons dont l'emplacement est renseigné dans **Paramètres → Maisons**),
+et prend ses horaires. Pour chercher d'autres mots que le nom, écrivez-les après
+`auto:`, par exemple `Boulangerie = auto: Boulangerie Dupont`. Les accents et les
+majuscules ne comptent pas.
+
+- Avec plusieurs maisons, le commerce le plus proche de toutes les maisons gagne :
+  donnez un nom précis (`auto: Carrefour Market Vierzon`) pour en choisir un près
+  d'une maison donnée.
+- **Tester la configuration** cite le commerce trouvé, sa ville, sa distance et ses
+  horaires : vérifiez que c'est le bon.
+- Les horaires sont recherchés de nouveau une fois par jour, et gardés : un
+  redémarrage sans réseau les conserve.
+- Si OpenStreetMap n'a pas d'horaires pour votre commerce, ou des horaires que
+  l'intégration ne sait pas lire, écrivez-les à la main (et pourquoi pas ajoutez-les
+  sur openstreetmap.org).
 
 ### Cartes de fidélité
 
@@ -113,6 +135,10 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 
 ## Dépannage
 
+- **« Aucun commerce de ce nom ... sur OpenStreetMap »** : essayez moins de mots, un
+  **Rayon de recherche** plus grand, ou écrivez les horaires à la main.
+- **« Aucune maison de Gladys n'a d'emplacement »** : renseignez l'emplacement de la
+  maison dans **Paramètres → Maisons**.
 - **« Les horaires ne sont pas compris »** : le message cite la partie fautive.
   Utilisez les jours en anglais (`Mo`, pas `Lu`) et des heures `HH:MM` (`08:30`,
   pas `8h30`).
@@ -125,5 +151,10 @@ contrôle valide), un Code 128 sinon. Les scanners de caisse lisent les deux.
 
 ## Données
 
-Rien ne sort de votre Gladys. Les cagnottes sont gardées dans le volume `/data` de
-l'intégration (`cards.json`) et comme états Gladys.
+Les cagnottes sont gardées dans le volume `/data` de l'intégration (`cards.json`) et
+comme états Gladys ; elles ne sortent jamais de votre Gladys.
+
+Pour les commerces écrits `auto` seulement : les mots cherchés et l'emplacement de vos
+maisons (une zone du rayon de recherche autour de chacune) sont envoyés à l'API
+Overpass d'OpenStreetMap (`overpass-api.de`), une fois par jour. Les horaires trouvés
+sont gardés dans `/data/hours.json`. Sans `auto`, rien n'est envoyé.

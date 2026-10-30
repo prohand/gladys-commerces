@@ -16,6 +16,8 @@ export const DEFAULT_CONFIG = {
   stores: '',
   // Minutes before an opening or a closing that fire the "soon" triggers.
   notice_minutes: 30,
+  // How far from a house a store written `Name = auto` is looked for, in km.
+  search_radius_km: 10,
   // `Name=number; Name=number`, read by src/shops/cards.js. Empty: no card.
   loyalty_cards: '',
 };
@@ -23,6 +25,7 @@ export const DEFAULT_CONFIG = {
 /** Bounds of the number fields, the same as in the manifest. */
 export const LIMITS = {
   notice_minutes: [5, 180],
+  search_radius_km: [1, 50],
 };
 
 /**
@@ -35,6 +38,7 @@ export function normalizeConfig(raw = {}) {
   return {
     stores: text(raw.stores, DEFAULT_CONFIG.stores),
     notice_minutes: bounded(raw.notice_minutes, 'notice_minutes'),
+    search_radius_km: bounded(raw.search_radius_km, 'search_radius_km'),
     loyalty_cards: text(raw.loyalty_cards, DEFAULT_CONFIG.loyalty_cards),
   };
 }

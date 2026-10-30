@@ -6,19 +6,20 @@ This integration brings two things about the shops you go to into Gladys:
 - your **loyalty cards**, of any brand: their barcode on the dashboard, to scan at
   the till from your phone, and their balance.
 
-Everything is computed in Gladys: no account, no password, nothing sent on the
-internet.
+Everything is computed in Gladys: no account, no password. The only call out is
+optional: looking up on OpenStreetMap the hours of the shops you write `auto`.
 
 ## Set up
 
 Open **Integrations**, find the integration, install it, then fill in the
 **Configuration** screen.
 
-| Field                   | What to put                                                                 |
-| ----------------------- | --------------------------------------------------------------------------- |
-| Shops and opening hours | Your shops and their hours (see below). Leave empty if you only want cards. |
-| Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.   |
-| Card numbers            | Your loyalty cards (see below). Leave empty if you have none.               |
+| Field                   | What to put                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| Shops and opening hours | Your shops and their hours (see below). Leave empty if you only want cards.          |
+| Search radius ... (km)  | For the shops written `auto`: how far from a house they are looked for. Default: 10. |
+| Notice before ... (min) | When the "opens soon" / "closes soon" triggers fire. Default: 30 minutes.            |
+| Card numbers            | Your loyalty cards (see below). Leave empty if you have none.                        |
 
 Then click **Test the configuration**: the answer says, shop by shop, whether it is
 open, and which cards were understood.
@@ -50,6 +51,23 @@ Ascension and Whit Monday included). Hours are read on the French clock. Up to 1
 shops.
 
 The name identifies the shop: renaming it creates a new device in Gladys.
+
+#### Hours found automatically
+
+Write `auto` instead of the hours: `Leclerc = auto`. The integration then looks on
+OpenStreetMap for the shop of that name nearest to your Gladys houses (all the
+houses with a location, set in **Settings → Houses**), and takes its hours. To look
+for other words than the name, write them after `auto:`, for example
+`Bakery = auto: Boulangerie Dupont`. Accents and case do not matter.
+
+- With several houses, the nearest shop of all houses wins: give a precise name
+  (`auto: Carrefour Market Vierzon`) to pick one near a given house.
+- **Test the configuration** names the shop found, its town, its distance and its
+  hours: check it is the right one.
+- The hours are looked up again once a day, and kept: a restart without network
+  keeps them.
+- If OpenStreetMap has no hours for your shop, or hours the integration cannot
+  read, type them by hand (and why not add them on openstreetmap.org).
 
 ### Loyalty cards
 
@@ -108,6 +126,10 @@ a Code 128 otherwise. Both are read by till scanners.
 
 ## Troubleshooting
 
+- **"No shop of this name ... on OpenStreetMap"**: try fewer words, a wider
+  **Search radius**, or type the hours by hand.
+- **"No house of Gladys has a location"**: set the house location in **Settings →
+  Houses**.
 - **"The opening hours are not understood"**: the message names the wrong part. Use
   the English day names (`Mo`, not `Lu`) and `HH:MM` times (`08:30`, not `8h30`).
 - **A shop is "not understood"**: each entry must be `Name = hours`, entries separated
@@ -119,5 +141,10 @@ a Code 128 otherwise. Both are read by till scanners.
 
 ## Data
 
-Nothing leaves your Gladys. The balances are kept in the integration's own `/data`
-volume (`cards.json`) and as Gladys states.
+The balances are kept in the integration's own `/data` volume (`cards.json`) and
+as Gladys states; they never leave your Gladys.
+
+For the shops written `auto` only: the words looked for and the location of your
+houses (an area of the search radius around each) are sent to the OpenStreetMap
+Overpass API (`overpass-api.de`), once a day. The hours found are kept in
+`/data/hours.json`. Without `auto`, nothing is sent.

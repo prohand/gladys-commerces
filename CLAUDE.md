@@ -6,10 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A Gladys Assistant **external integration** (Node 22+, ESM, no build step, one runtime
 dependency: `@gladysassistant/integration-sdk`) for the **shops** a household goes to: the
-opening hours of several shops, and loyalty cards of any brand (barcode on the dashboard,
+opening hours of several shops (typed, or found on OpenStreetMap around the Gladys houses
+for a shop written `auto`), and loyalty cards of any brand (barcode on the dashboard,
 balance entered by hand). Requires Gladys 5.3+. Manifest tags: `transports: ["local"]`
-(nothing leaves the container), `countries: ["FR"]` (French public holidays). Started from
-the official JavaScript template.
+(the states are computed in the container), `location: true` (house coordinates, for the
+`auto` lookup), `countries: ["FR"]` (French public holidays). Started from the official
+JavaScript template.
 
 Repository: `prohand/gladys-commerces` (formerly `gladys-eleclerc`: it started as an
 E.Leclerc integration). The package name, the image and the links of the manifest name it
@@ -45,6 +47,7 @@ src/i18n.js             LANGUAGES (en, fr, de, es), localize, pick
 src/devices/index.js    one device per shop, one per loyalty card
 src/shops/hours.js      opening_hours parser, French holidays, storeStatus
 src/shops/stores.js     parseStores, StoreWatcher (per-minute state, opening/closing soon)
+src/shops/finder.js     `auto` shops: HoursFinder (Overpass, /data/hours.json, once a day)
 src/shops/cards.js      parseCards, Wallet (balances in /data/cards.json)
 src/shops/barcode.js    EAN-13 / Code 128 modules, barcodePng
 src/shops/png.js        minimal grayscale PNG writer (own CRC-32)
@@ -57,7 +60,8 @@ src/capabilities/       actions, scenes, widgets
   keys), config keys, action / trigger / scene action / widget keys and `mode` values are
   stored by users. Never rename them, never change `storeSlug`.
 - **Config syntax**: shops `Name = hours | Name = hours` (`|` and `=` never appear in the
-  supported opening_hours subset), cards `Name=number; Name=number`. The examples of the
+  supported opening_hours subset), `Name = auto` or `Name = auto: words` for a lookup on
+  OpenStreetMap, cards `Name=number; Name=number`. The examples of the
   manifest placeholders and of the docs are parsed by the tests.
 - **Hours are on the Europe/Paris clock**, whatever the container clock (UTC).
 - **Opening state is a read-only switch**: on an `opening-sensor`, Gladys reads 1 as closed.
@@ -72,8 +76,11 @@ src/capabilities/       actions, scenes, widgets
   can stay (the core caches an image one hour per key). Served only for configured cards.
 - **No event as a consequence of a scene action** (loop rule of the SDK).
 - `poll_frequency` is not used: the integration runs its own one-minute timer.
+- **The only network call is the OpenStreetMap lookup**, and only for `auto` shops: no
+  `auto`, no call (and no `getHouses()`). User words reach the Overpass query only as
+  letters and digits (`searchPattern`).
 - The rootfs is read-only: write only under `/data`. Tests never touch the disk outside a
-  temp dir (inject `storage`) nor the network.
+  temp dir (inject `storage`, `hoursCache`) nor the network (inject `fetch`).
 
 ### Manifest
 

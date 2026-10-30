@@ -11,6 +11,7 @@ import { actionHandlers } from './capabilities/actions.js';
 import { SCENE_ACTIONS, sceneActionHandlers } from './capabilities/scenes.js';
 import { cardImage, WIDGET_KEYS, widgetHandlers } from './capabilities/widgets.js';
 import { Wallet } from './shops/cards.js';
+import { HoursFinder, RETRY_MS } from './shops/finder.js';
 import { StoreWatcher } from './shops/stores.js';
 
 const logger = createLogger({ name: 'app' });
@@ -19,21 +20,49 @@ const logger = createLogger({ name: 'app' });
  * @param {object} gladys a GladysIntegration (or the fake one of the tests)
  * @param {object} [deps] replacements for the tests
  * @param {object} [deps.storage] storage of the card balances
+ * @param {object} [deps.hoursCache] storage of the hours found on OpenStreetMap
+ * @param {typeof fetch} [deps.fetch] the network, for the OpenStreetMap lookups
  * @param {() => Date} [deps.now] clock
  * @param {boolean} [deps.timers] false: no interval timer (the tests tick by hand)
  */
 export function createApp(gladys, deps = {}) {
   const { now, timers = true } = deps;
-  const watcher = new StoreWatcher({ gladys, now });
+  const finder = new HoursFinder({
+    gladys,
+    now,
+    ...(deps.fetch && { fetch: deps.fetch }),
+    ...(deps.hoursCache && { cache: deps.hoursCache }),
+  });
+  const watcher = new StoreWatcher({ gladys, now, lookup: (search) => finder.get(search) });
   const wallet = new Wallet({ gladys, now, ...(deps.storage && { storage: deps.storage }) });
+  let config = null;
+  let lookupTimer = null;
 
   function configure(raw) {
-    const config = normalizeConfig(raw);
+    config = normalizeConfig(raw);
     watcher.configure(config);
     wallet.configure(config);
     return config;
   }
   configure(gladys.config ?? {});
+
+  /**
+   * Look the `auto` stores up on OpenStreetMap when needed (HoursFinder says
+   * when), then publish their new state. Never throws: a store without hours
+   * says why on the screens.
+   */
+  async function findHours() {
+    try {
+      if (!(await finder.refresh(watcher.searches, config.search_radius_km))) {
+        return;
+      }
+      watcher.resolve();
+      await watcher.tick();
+      gladys.requestWidgetRefresh(WIDGET_KEYS.STORE_HOURS);
+    } catch (err) {
+      logger.error('Opening hours lookup failed', err);
+    }
+  }
 
   const devices = () => buildDiscoveredDevices(gladys, watcher.stores, wallet.cards);
 
@@ -41,6 +70,17 @@ export function createApp(gladys, deps = {}) {
   async function run() {
     await (timers ? watcher.start() : watcher.tick());
     await wallet.publishAll();
+  }
+
+  /** Look the `auto` stores up now if needed, then every hour. */
+  async function startLookups() {
+    if (timers && !lookupTimer) {
+      // Asks the finder every hour: it only goes on the network once a day,
+      // or an hour after a failure.
+      lookupTimer = setInterval(findHours, RETRY_MS);
+      lookupTimer.unref?.();
+    }
+    await findHours();
   }
 
   gladys.onScanRequest(async () => {
@@ -77,6 +117,7 @@ export function createApp(gladys, deps = {}) {
     for (const key of Object.values(WIDGET_KEYS)) {
       gladys.requestWidgetRefresh(key);
     }
+    await startLookups();
   });
 
   gladys.on('connected', async () => {
@@ -84,8 +125,10 @@ export function createApp(gladys, deps = {}) {
       configure(await gladys.getConfig());
       await gladys.publishDiscoveredDevices(devices());
       await run();
-      // Nothing to reach on the network: connected means configured.
+      // Connected means configured: an OpenStreetMap lookup that fails is
+      // told per store, it does not disconnect the integration.
       await gladys.setConnectionStatus(true);
+      await startLookups();
     } catch (err) {
       logger.error('Post-connection initialization failed', err);
       await gladys
@@ -101,8 +144,10 @@ export function createApp(gladys, deps = {}) {
 
   function stop() {
     watcher.stop();
+    clearInterval(lookupTimer);
+    lookupTimer = null;
   }
   gladys.on('disconnected', stop);
 
-  return { watcher, wallet, stop };
+  return { watcher, wallet, finder, stop };
 }

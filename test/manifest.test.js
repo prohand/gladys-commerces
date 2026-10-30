@@ -37,8 +37,10 @@ test('version, image and cover agree with package.json and with each other', () 
 });
 
 test('a local integration, for France, on Gladys 5.3 or later', () => {
-  // Everything is computed in the container: no third-party service is called.
+  // The states are computed in the container: the only call out is the
+  // OpenStreetMap lookup of the stores written `auto`, near the houses.
   assert.deepEqual(manifest.transports, ['local']);
+  assert.equal(manifest.location, true);
   assert.deepEqual(manifest.countries, ['FR']);
   assert.equal(manifest.gladys_version, '>=5.3.0');
 });
@@ -92,8 +94,12 @@ test('the examples of the placeholders are read as they are meant', () => {
     const parsed = parseStores(example(stores, language));
     assert.deepEqual(parsed.errors, [], language);
     assert.equal(parsed.stores.length, 2, language);
-    assert.ok(
-      parsed.stores.every((store) => store.schedule),
+    assert.deepEqual(
+      parsed.stores.map((store) => [Boolean(store.search), Boolean(store.schedule)]),
+      [
+        [true, false],
+        [false, true],
+      ],
       language,
     );
     const read = parseCards(example(cards, language));

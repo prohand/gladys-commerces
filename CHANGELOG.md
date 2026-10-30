@@ -14,6 +14,10 @@ the version's GitHub Release.
 
 - Opening hours of several shops in the OpenStreetMap syntax, with French public
   holidays: one device per shop (open, minutes until it opens or closes).
+- Opening hours found automatically: a shop written `Name = auto` (or
+  `Name = auto: words`) takes the hours of the nearest matching shop on
+  OpenStreetMap, around the Gladys houses (new "Search radius" setting, location
+  access of the houses). Looked up once a day, kept in `/data/hours.json`.
 - Loyalty cards of any brand: one device per card with its balance, entered by the
   user; the card's barcode (EAN-13 or Code 128) on the dashboard.
 - Scene triggers: a shop opens soon, a shop closes soon (filter: the shop).
