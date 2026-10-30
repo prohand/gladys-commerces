@@ -13,8 +13,10 @@
 //
 // This is the only network call of the integration: the Overpass API
 // receives the words looked for, the kinds, and an area around each house.
-// The main server is often busy (timeouts, 502): a second public server is
-// asked when it fails, the same query, so the data sent stays the same.
+// The main server is often busy (timeouts, 502): the other free public
+// servers are asked in turn when it fails, the same query, so the data sent
+// stays the same. Never a regional server: it would find no shop and that
+// answer would be kept a day.
 // The results are kept in /data/hours.json, so a restart without network
 // keeps the hours, and refreshed once a day (the shops update their hours on
 // the map from time to time).
@@ -26,9 +28,14 @@ import { createLogger } from '@gladysassistant/integration-sdk';
 
 const logger = createLogger({ name: 'finder' });
 
-export const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
-/** Asked when the main server fails. */
-export const OVERPASS_FALLBACK_URL = 'https://overpass.kumi.systems/api/interpreter';
+/** The Overpass servers, asked in this order until one answers. */
+export const OVERPASS_URLS = [
+  'https://overpass-api.de/api/interpreter',
+  // Formerly overpass.kumi.systems.
+  'https://overpass.private.coffee/api/interpreter',
+  // VK Maps.
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
+];
 const USER_AGENT =
   'gladys-horaires-commerces (+https://github.com/prohand/gladys-horaires-commerces)';
 
@@ -36,7 +43,12 @@ const USER_AGENT =
 export const REFRESH_MS = 24 * 3600_000;
 /** After a failed lookup, the next try. */
 export const RETRY_MS = 3600_000;
-const TIMEOUT_MS = 60_000;
+/**
+ * Per server, a little over the `[timeout:25]` of the query: a lookup around
+ * a few houses takes seconds, and a busy server admits a short query sooner.
+ * With every server down, a lookup gives up within a minute and a half.
+ */
+const TIMEOUT_MS = 30_000;
 
 /** The nearest shops of each kind offered per house, in the Discovery tab. */
 export const PER_KIND = 3;
@@ -184,7 +196,7 @@ export function overpassQuery({ searches = [], kinds = [], known = [], houses, r
   }
   // `out center`, not `out tags center`: the tags verbosity drops the
   // coordinates of the nodes, and many shops are a node.
-  return `[out:json][timeout:50];\n(\n${lines.join('\n')}\n);\nout center;`;
+  return `[out:json][timeout:25];\n(\n${lines.join('\n')}\n);\nout center;`;
 }
 
 /** Distance in meters between two points (haversine). */
@@ -525,14 +537,19 @@ export class HoursFinder {
     return JSON.stringify([this.results, this.nearby, this.shops]);
   }
 
-  /** The query on the main server, then on the fallback one if it fails. */
+  /** The query on each server in turn, until one answers: the last error if none. */
   async overpass(query) {
-    try {
-      return await this.ask(OVERPASS_URL, query);
-    } catch (err) {
-      logger.warn(`${new URL(OVERPASS_URL).host} failed (${err.message}), trying the fallback`);
+    for (const [index, url] of OVERPASS_URLS.entries()) {
+      const next = OVERPASS_URLS[index + 1];
+      try {
+        return await this.ask(url, query);
+      } catch (err) {
+        if (!next) {
+          throw err;
+        }
+        logger.warn(`${new URL(url).host} failed (${err.message}), trying ${new URL(next).host}`);
+      }
     }
-    return this.ask(OVERPASS_FALLBACK_URL, query);
   }
 
   async ask(url, query) {

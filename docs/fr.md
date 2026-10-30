@@ -1,4 +1,4 @@
-# Commerces — guide d'utilisation
+# Horaires Commerces — guide d'utilisation
 
 Cette intégration apporte dans Gladys deux choses sur les commerces où vous allez :
 
@@ -176,7 +176,7 @@ comme états Gladys ; elles ne sortent jamais de votre Gladys.
 Pour trouver les horaires (commerces écrits sans horaires, et onglet Découverte), les
 mots cherchés, les types de commerces et l'emplacement de vos maisons (une zone du
 rayon de recherche autour de chacune) sont envoyés à l'API Overpass d'OpenStreetMap
-(`overpass-api.de`, ou `overpass.kumi.systems` quand le premier ne répond pas), une
-fois par jour. Les horaires trouvés sont gardés dans
+(`overpass-api.de` ; s'il ne répond pas, `overpass.private.coffee`, puis `maps.mail.ru`
+tenu par VK), une fois par jour. Les horaires trouvés sont gardés dans
 `/data/hours.json`. Pour ne rien envoyer : écrivez les horaires de tous les commerces
 et décochez tous les types de commerces.

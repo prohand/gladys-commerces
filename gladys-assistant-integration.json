@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Commerces",
+  "name": "Horaires Commerces",
   "description": {
     "en": "Opening hours of your shops and your loyalty cards on the Gladys dashboard.",
     "fr": "Horaires de vos commerces et vos cartes de fidélité sur le tableau de bord Gladys.",

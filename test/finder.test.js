@@ -13,8 +13,7 @@ import {
   nameMatches,
   nearestShops,
   overpassQuery,
-  OVERPASS_FALLBACK_URL,
-  OVERPASS_URL,
+  OVERPASS_URLS,
   REFRESH_MS,
   RETRY_MS,
   searchKey,
@@ -184,29 +183,31 @@ test('asked during a lookup that fails: no second query at once', async () => {
   await sent;
   await Promise.all([first, finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true })]);
   finder.fetch = fetch;
-  // One lookup: the main server, then the fallback.
-  assert.equal(fetch.queries.length, 2);
+  // One lookup: every server once.
+  assert.equal(fetch.queries.length, OVERPASS_URLS.length);
   assert.equal(finder.status.state, 'unreachable');
   // Asked again later, by the user: no wait.
   fetch.down = false;
   await finder.refresh({ searches: ['leclerc'], radiusKm: 10, force: true });
-  assert.equal(fetch.queries.length, 3);
+  assert.equal(fetch.queries.length, OVERPASS_URLS.length + 1);
   assert.equal(finder.get('leclerc').name, 'E.Leclerc');
 });
 
-test('the main server fails: the same query on the fallback server', async () => {
+test('a server fails: the same query on the next one, in order', async () => {
+  const [main, second, third] = OVERPASS_URLS;
+  assert.ok(OVERPASS_URLS.every((url) => url.startsWith('https://')));
   const { finder, fetch } = finderSetup();
-  fetch.downUrls = [OVERPASS_URL];
+  fetch.downUrls = [main, second];
   assert.equal(await finder.refresh({ searches: ['leclerc'], radiusKm: 10 }), true);
-  assert.deepEqual(fetch.urls, [OVERPASS_URL, OVERPASS_FALLBACK_URL]);
-  assert.equal(fetch.queries[0], fetch.queries[1]);
+  assert.deepEqual(fetch.urls, [main, second, third]);
+  assert.equal(new Set(fetch.queries).size, 1);
   assert.equal(finder.status.state, 'ok');
   assert.equal(finder.get('leclerc').name, 'E.Leclerc');
 
-  // The main server back: the fallback is not asked.
+  // The main server back: the others are not asked.
   fetch.downUrls = [];
   await finder.refresh({ searches: ['leclerc', 'pharmacie'], radiusKm: 10 });
-  assert.deepEqual(fetch.urls.slice(2), [OVERPASS_URL]);
+  assert.deepEqual(fetch.urls.slice(3), [main]);
 });
 
 test('no located house, or no access to the houses: nothing is asked', async () => {

@@ -1,4 +1,4 @@
-# Geschäfte — Benutzerhandbuch
+# Horaires Commerces — Benutzerhandbuch
 
 Diese Integration bringt zwei Dinge zu den Geschäften, in die Sie gehen, in Gladys:
 
@@ -179,7 +179,7 @@ Gladys-Zustände gespeichert; sie verlassen Ihr Gladys nie.
 Um die Zeiten zu finden (ohne Zeiten eingetragene Geschäfte und Reiter Erkennung),
 werden die gesuchten Wörter, die Arten von Geschäften und der Standort Ihrer Häuser
 (ein Bereich im Suchradius um jedes) einmal am Tag an die Overpass-API von
-OpenStreetMap (`overpass-api.de`, oder `overpass.kumi.systems`, wenn der erste nicht
-antwortet) gesendet. Die gefundenen Zeiten werden in
+OpenStreetMap (`overpass-api.de`; wenn er nicht antwortet, `overpass.private.coffee`,
+dann `maps.mail.ru`, betrieben von VK) gesendet. Die gefundenen Zeiten werden in
 `/data/hours.json` gespeichert. Um nichts zu senden: Geben Sie die Zeiten aller
 Geschäfte ein und entfernen Sie alle Häkchen bei den Arten von Geschäften.

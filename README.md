@@ -1,4 +1,4 @@
-# Commerces — Gladys Assistant integration
+# Horaires Commerces — Gladys Assistant integration
 
 External integration bringing two things about the shops you go to into
 [Gladys Assistant](https://gladysassistant.com):
@@ -59,7 +59,8 @@ results are cached in `/data/hours.json`. The same query also brings, per house,
 the nearest shops of the kinds checked in the configuration: they are offered in the
 Discovery tab (`store:osm-<id>` devices, the hours in their params), and the ones
 created are refreshed by id. It is the only network call: when `overpass-api.de`
-fails (a timeout, a 502), the same query goes to `overpass.kumi.systems`.
+fails (a timeout, a 502), the same query goes to `overpass.private.coffee`, then to
+`maps.mail.ru` (`OVERPASS_URLS`).
 
 **Loyalty cards.** Retailers offer no public API for their cards: reading a balance
 would take the customer's password and an unofficial interface, which this

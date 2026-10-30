@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 import { validateWidgetContent, validateWidgetImage } from '@gladysassistant/integration-sdk';
 import { createApp } from '../src/app.js';
+import { OVERPASS_URLS } from '../src/shops/finder.js';
 import { cardIds, storeIds } from '../src/devices/index.js';
 import {
   fakeClock,
@@ -262,8 +263,8 @@ test('test_configuration says why the Discovery tab is empty, and tries again', 
     (await test())[1],
     'Onglet Découverte : 1 commerce(s) trouvé(s) autour de Campagne : créez ceux où vous allez.',
   );
-  // Down: the main server and the fallback; back: the main server.
-  assert.equal(fetch.queries.length, 3);
+  // Down: every server; back: the main server.
+  assert.equal(fetch.queries.length, OVERPASS_URLS.length + 1);
   assert.ok(
     gladys.fake.discoveredDevices.some((device) => device.name.startsWith('Pharmacie du Marché')),
   );
