@@ -27,6 +27,7 @@
   ],
   "countries": ["FR"],
   "transports": ["local"],
+  "location": true,
   "config_schema": [
     {
       "key": "intro",
@@ -38,10 +39,10 @@
         "es": "Primeros pasos"
       },
       "description": {
-        "en": "Everything is computed in Gladys, with no account: the opening hours of the shops you go to, and your loyalty cards of any brand, whose barcode the dashboard shows at the till. Shops have no public API for their cards: the balance is the one you enter.",
-        "fr": "Tout est calculé dans Gladys, sans compte : les horaires des commerces où vous allez, et vos cartes de fidélité de toutes enseignes, dont le tableau de bord affiche le code-barres en caisse. Les enseignes n'ont pas d'API publique pour leurs cartes : la cagnotte est celle que vous saisissez.",
-        "de": "Alles wird in Gladys berechnet, ohne Konto: die Öffnungszeiten Ihrer Geschäfte und Ihre Kundenkarten aller Marken, deren Barcode das Dashboard an der Kasse zeigt. Die Händler haben keine öffentliche API für ihre Karten: Das Guthaben ist das, das Sie eingeben.",
-        "es": "Todo se calcula en Gladys, sin cuenta: el horario de los comercios a los que va, y sus tarjetas de fidelidad de cualquier marca, cuyo código de barras muestra el panel en caja. Los comercios no tienen API pública para sus tarjetas: el saldo es el que usted introduce."
+        "en": "Everything is computed in Gladys, with no account: the opening hours of the shops you go to, typed by you or found on OpenStreetMap around your houses, and your loyalty cards of any brand, whose barcode the dashboard shows at the till. Shops have no public API for their cards: the balance is the one you enter.",
+        "fr": "Tout est calculé dans Gladys, sans compte : les horaires des commerces où vous allez, saisis par vous ou trouvés sur OpenStreetMap autour de vos maisons, et vos cartes de fidélité de toutes enseignes, dont le tableau de bord affiche le code-barres en caisse. Les enseignes n'ont pas d'API publique pour leurs cartes : la cagnotte est celle que vous saisissez.",
+        "de": "Alles wird in Gladys berechnet, ohne Konto: die Öffnungszeiten Ihrer Geschäfte, von Ihnen eingegeben oder auf OpenStreetMap rund um Ihre Häuser gefunden, und Ihre Kundenkarten aller Marken, deren Barcode das Dashboard an der Kasse zeigt. Die Händler haben keine öffentliche API für ihre Karten: Das Guthaben ist das, das Sie eingeben.",
+        "es": "Todo se calcula en Gladys, sin cuenta: el horario de los comercios a los que va, escrito por usted o encontrado en OpenStreetMap alrededor de sus casas, y sus tarjetas de fidelidad de cualquier marca, cuyo código de barras muestra el panel en caja. Los comercios no tienen API pública para sus tarjetas: el saldo es el que usted introduce."
       },
       "links": [
         {
@@ -74,10 +75,10 @@
         "es": "Sus comercios"
       },
       "description": {
-        "en": "One shop per entry: a name, an equals sign, its hours in the OpenStreetMap syntax (days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed). Shops separated by a vertical bar |.",
-        "fr": "Un commerce par entrée : un nom, un signe égal, ses horaires en syntaxe OpenStreetMap (jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé). Commerces séparés par une barre verticale |.",
-        "de": "Ein Geschäft pro Eintrag: ein Name, ein Gleichheitszeichen, seine Zeiten in OpenStreetMap-Syntax (Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen). Geschäfte durch einen senkrechten Strich | getrennt.",
-        "es": "Un comercio por entrada: un nombre, un signo igual, su horario en sintaxis OpenStreetMap (días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado). Comercios separados por una barra vertical |."
+        "en": "One shop per entry: a name, an equals sign, then its hours in the OpenStreetMap syntax (days Mo Tu We Th Fr Sa Su, PH for public holidays, off when closed) or auto: the hours are then looked up on OpenStreetMap, at the shop of that name nearest to your Gladys houses (auto: other words to look for another name). Shops separated by a vertical bar |.",
+        "fr": "Un commerce par entrée : un nom, un signe égal, puis ses horaires en syntaxe OpenStreetMap (jours Mo Tu We Th Fr Sa Su, PH pour les jours fériés, off si fermé) ou auto : les horaires sont alors cherchés sur OpenStreetMap, au commerce de ce nom le plus proche de vos maisons Gladys (auto: d'autres mots pour chercher un autre nom). Commerces séparés par une barre verticale |.",
+        "de": "Ein Geschäft pro Eintrag: ein Name, ein Gleichheitszeichen, dann seine Zeiten in OpenStreetMap-Syntax (Tage Mo Tu We Th Fr Sa Su, PH für Feiertage, off wenn geschlossen) oder auto: Die Zeiten werden dann auf OpenStreetMap gesucht, beim Geschäft dieses Namens, das Ihren Gladys-Häusern am nächsten liegt (auto: andere Wörter, um einen anderen Namen zu suchen). Geschäfte durch einen senkrechten Strich | getrennt.",
+        "es": "Un comercio por entrada: un nombre, un signo igual, y luego su horario en sintaxis OpenStreetMap (días Mo Tu We Th Fr Sa Su, PH para los festivos, off si está cerrado) o auto: el horario se busca entonces en OpenStreetMap, en el comercio con ese nombre más cercano a sus casas de Gladys (auto: otras palabras para buscar otro nombre). Comercios separados por una barra vertical |."
       }
     },
     {
@@ -90,13 +91,33 @@
         "es": "Comercios y horario"
       },
       "placeholder": {
-        "en": "e.g. Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacy = Mo-Fr 09:00-19:00",
-        "fr": "ex. Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00",
-        "de": "z. B. Leclerc = Mo-Sa 08:30-20:00; PH off | Apotheke = Mo-Fr 09:00-19:00",
-        "es": "p. ej. Leclerc = Mo-Sa 08:30-20:00; PH off | Farmacia = Mo-Fr 09:00-19:00"
+        "en": "e.g. Leclerc = auto | Pharmacy = Mo-Fr 09:00-19:00",
+        "fr": "ex. Leclerc = auto | Pharmacie = Mo-Fr 09:00-19:00",
+        "de": "z. B. Leclerc = auto | Apotheke = Mo-Fr 09:00-19:00",
+        "es": "p. ej. Leclerc = auto | Farmacia = Mo-Fr 09:00-19:00"
       },
       "required": false,
       "default": ""
+    },
+    {
+      "key": "search_radius_km",
+      "type": "number",
+      "label": {
+        "en": "Search radius around the houses (km)",
+        "fr": "Rayon de recherche autour des maisons (km)",
+        "de": "Suchradius um die Häuser (km)",
+        "es": "Radio de búsqueda alrededor de las casas (km)"
+      },
+      "description": {
+        "en": "For the shops written auto: how far from a Gladys house they are looked for on OpenStreetMap.",
+        "fr": "Pour les commerces écrits auto : à quelle distance d'une maison Gladys ils sont cherchés sur OpenStreetMap.",
+        "de": "Für die mit auto eingetragenen Geschäfte: wie weit von einem Gladys-Haus sie auf OpenStreetMap gesucht werden.",
+        "es": "Para los comercios escritos auto: a qué distancia de una casa de Gladys se buscan en OpenStreetMap."
+      },
+      "required": false,
+      "default": 10,
+      "min": 1,
+      "max": 50
     },
     {
       "key": "notice_minutes",

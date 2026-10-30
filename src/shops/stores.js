@@ -8,16 +8,19 @@
 //
 // Stores are separated by `|` (or a line break), the name comes before `=`.
 // `|` and `=` never appear in the opening_hours subset read by hours.js.
+// `Name = auto` (or `Name = auto: words`) leaves the hours to OpenStreetMap,
+// around the houses of Gladys: see finder.js, the only network call.
 //
 // Once a minute the watcher publishes, for each store, whether it is open and
 // the minutes until that changes, and fires the "opens soon" / "closes soon"
-// scene triggers once per change. Nothing goes on the network.
+// scene triggers once per change.
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { TIME_ZONE } from '../config.js';
 import { FEATURES, storeIds } from '../devices/index.js';
 import { localize, pick } from '../i18n.js';
+import { autoSearch } from './finder.js';
 import { formatRanges, parseOpeningHours, storeStatus } from './hours.js';
 
 const logger = createLogger({ name: 'stores' });
@@ -48,13 +51,31 @@ export function storeSlug(name) {
 }
 
 /**
+ * Why a store looked up on OpenStreetMap has no hours: `reason` is `pending`,
+ * `not_found`, `unreachable`, `no_house`, `no_access` or `not_understood`
+ * (with `hours` and `cause`). See describeHoursError.
+ */
+export class LookupError extends Error {
+  constructor(reason, details = {}) {
+    super(`hours lookup: ${reason}`);
+    this.name = 'LookupError';
+    this.reason = reason;
+    Object.assign(this, details);
+  }
+}
+
+/**
  * Read the stores of the configuration.
  * @param {string} text
  * @returns {{
- *   stores: Array<{ id: string, name: string, hours: string, schedule: object|null, error: Error|null }>,
+ *   stores: Array<{
+ *     id: string, name: string, hours: string, search: string|null,
+ *     schedule: object|null, error: Error|null, place: object|null
+ *   }>,
  *   errors: string[]
  * }} a store whose hours cannot be read is kept, with its error: the screens
- *   say what is wrong with it
+ *   say what is wrong with it. A store to look up (`search`) waits for its
+ *   hours (StoreWatcher.resolve).
  */
 export function parseStores(text) {
   const stores = [];
@@ -74,6 +95,19 @@ export function parseStores(text) {
     if (stores.some((store) => store.id === id)) {
       continue;
     }
+    const search = autoSearch(hours, name);
+    if (search !== null) {
+      stores.push({
+        id,
+        name,
+        hours: '',
+        search,
+        schedule: null,
+        error: new LookupError('pending'),
+        place: null,
+      });
+      continue;
+    }
     let schedule = null;
     let error = null;
     try {
@@ -81,7 +115,7 @@ export function parseStores(text) {
     } catch (err) {
       error = err;
     }
-    stores.push({ id, name, hours, schedule, error });
+    stores.push({ id, name, hours, search: null, schedule, error, place: null });
   }
   if (stores.length > MAX_STORES) {
     errors.push(...stores.splice(MAX_STORES).map((store) => store.name));
@@ -94,10 +128,13 @@ export class StoreWatcher {
    * @param {object} options
    * @param {object} options.gladys the SDK instance
    * @param {() => Date} [options.now] clock, for the tests
+   * @param {(search: string) => object|undefined} [options.lookup] what
+   *   OpenStreetMap gave for a search (HoursFinder.get)
    */
-  constructor({ gladys, now = () => new Date() }) {
+  constructor({ gladys, now = () => new Date(), lookup = () => undefined }) {
     this.gladys = gladys;
     this.now = now;
+    this.lookup = lookup;
     this.config = null;
     this.stores = [];
     this.errors = [];
@@ -111,11 +148,39 @@ export class StoreWatcher {
   configure(config) {
     this.config = config;
     ({ stores: this.stores, errors: this.errors } = parseStores(config.stores));
-    for (const store of this.stores.filter((s) => s.error)) {
+    this.resolve();
+    for (const store of this.stores.filter((s) => s.error && !s.search)) {
       logger.warn(`Opening hours of "${store.name}" not understood: ${store.error.message}`);
     }
     for (const entry of this.errors) {
       logger.warn(`Store not understood: "${entry}"`);
+    }
+  }
+
+  /** The searches of the stores to look up on OpenStreetMap. */
+  get searches() {
+    return this.stores.filter((store) => store.search).map((store) => store.search);
+  }
+
+  /** Give the stores to look up the hours known for them now. */
+  resolve() {
+    for (const store of this.stores.filter((s) => s.search)) {
+      const result = this.lookup(store.search);
+      Object.assign(store, { hours: '', schedule: null, place: null });
+      if (!result) {
+        store.error = new LookupError('pending');
+      } else if (!result.hours) {
+        store.error = new LookupError(result.error, { radiusKm: result.radiusKm });
+      } else {
+        const { hours, ...place } = result;
+        store.place = place;
+        try {
+          Object.assign(store, { hours, schedule: parseOpeningHours(hours), error: null });
+        } catch (cause) {
+          store.error = new LookupError('not_understood', { hours, cause });
+          logger.warn(`Opening hours of "${store.name}" not understood: ${hours}`);
+        }
+      }
     }
   }
 
@@ -267,6 +332,9 @@ export function describeToday(status) {
 
 /** Why the hours could not be read, for the action and the widget. */
 export function describeHoursError(error) {
+  if (error instanceof LookupError) {
+    return describeLookupError(error);
+  }
   return localize((language) =>
     pick(language, {
       en: `The opening hours are not understood (${error.message}). Example: Mo-Sa 08:30-20:00; PH off`,
@@ -275,4 +343,86 @@ export function describeHoursError(error) {
       es: `No se entiende el horario (${error.message}). Ejemplo: Mo-Sa 08:30-20:00; PH off`,
     }),
   );
+}
+
+function describeLookupError(error) {
+  switch (error.reason) {
+    case 'pending':
+      return {
+        en: 'Looking for the opening hours on OpenStreetMap…',
+        fr: 'Recherche des horaires sur OpenStreetMap…',
+        de: 'Die Öffnungszeiten werden auf OpenStreetMap gesucht…',
+        es: 'Buscando el horario en OpenStreetMap…',
+      };
+    case 'not_found':
+      return {
+        en: `No shop of this name with opening hours on OpenStreetMap within ${error.radiusKm} km of your houses. Type its hours instead of auto, e.g. Mo-Sa 08:30-20:00.`,
+        fr: `Aucun commerce de ce nom avec des horaires sur OpenStreetMap à moins de ${error.radiusKm} km de vos maisons. Écrivez ses horaires à la place de auto, ex. Mo-Sa 08:30-20:00.`,
+        de: `Kein Geschäft dieses Namens mit Öffnungszeiten auf OpenStreetMap im Umkreis von ${error.radiusKm} km Ihrer Häuser. Geben Sie seine Zeiten statt auto ein, z. B. Mo-Sa 08:30-20:00.`,
+        es: `Ningún comercio con este nombre y horario en OpenStreetMap a menos de ${error.radiusKm} km de sus casas. Escriba su horario en lugar de auto, p. ej. Mo-Sa 08:30-20:00.`,
+      };
+    case 'no_house':
+      return {
+        en: 'No house of Gladys has a location: set it in Settings → Houses, the hours are looked up around it.',
+        fr: "Aucune maison de Gladys n'a d'emplacement : renseignez-le dans Paramètres → Maisons, les horaires sont cherchés autour.",
+        de: 'Kein Haus von Gladys hat einen Standort: Legen Sie ihn unter Einstellungen → Häuser fest, die Zeiten werden in der Umgebung gesucht.',
+        es: 'Ninguna casa de Gladys tiene ubicación: indíquela en Ajustes → Casas, el horario se busca alrededor.',
+      };
+    case 'no_access':
+      return {
+        en: 'The integration cannot read the location of the houses: reinstall it to grant that access.',
+        fr: "L'intégration ne peut pas lire l'emplacement des maisons : réinstallez-la pour lui donner cet accès.",
+        de: 'Die Integration kann den Standort der Häuser nicht lesen: Installieren Sie sie neu, um diesen Zugriff zu gewähren.',
+        es: 'La integración no puede leer la ubicación de las casas: reinstálela para concederle ese acceso.',
+      };
+    case 'unreachable':
+      return {
+        en: 'OpenStreetMap could not be reached: new try within the hour.',
+        fr: "OpenStreetMap n'a pas pu être joint : nouvel essai dans l'heure.",
+        de: 'OpenStreetMap war nicht erreichbar: neuer Versuch innerhalb einer Stunde.',
+        es: 'No se pudo contactar con OpenStreetMap: nuevo intento en la próxima hora.',
+      };
+    default:
+      return localize((language) =>
+        pick(language, {
+          en: `The opening hours found on OpenStreetMap are not understood: ${error.hours}. Type them instead of auto, e.g. Mo-Sa 08:30-20:00.`,
+          fr: `Les horaires trouvés sur OpenStreetMap ne sont pas compris : ${error.hours}. Écrivez-les à la place de auto, ex. Mo-Sa 08:30-20:00.`,
+          de: `Die auf OpenStreetMap gefundenen Öffnungszeiten werden nicht verstanden: ${error.hours}. Geben Sie sie statt auto ein, z. B. Mo-Sa 08:30-20:00.`,
+          es: `No se entiende el horario encontrado en OpenStreetMap: ${error.hours}. Escríbalo en lugar de auto, p. ej. Mo-Sa 08:30-20:00.`,
+        }),
+      );
+  }
+}
+
+/** Why the hours could not be read, in a few words for a status row. */
+export function describeHoursShort(error) {
+  if (error?.reason === 'pending') {
+    return { en: 'Searching…', fr: 'Recherche…', de: 'Suche…', es: 'Buscando…' };
+  }
+  if (error instanceof LookupError && error.reason !== 'not_understood') {
+    return {
+      en: 'Hours not found',
+      fr: 'Horaires introuvables',
+      de: 'Zeiten nicht gefunden',
+      es: 'Horario no encontrado',
+    };
+  }
+  return {
+    en: 'Hours not understood',
+    fr: 'Horaires non compris',
+    de: 'Zeiten nicht verstanden',
+    es: 'Horario no entendido',
+  };
+}
+
+/** Where the hours come from: "E.Leclerc, Bourges · 2.3 km", `null` when typed by hand. */
+export function describePlace(place, language) {
+  if (!place) {
+    return null;
+  }
+  const distance =
+    place.distance < 1000
+      ? `${place.distance} m`
+      : `${new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(place.distance / 1000)} km`;
+  return `${[place.name, place.city].filter(Boolean).join(', ')} · ${distance}`;
 }

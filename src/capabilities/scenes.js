@@ -19,7 +19,7 @@
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
-import { STORE_TRIGGERS } from '../shops/stores.js';
+import { describeHoursError, LookupError, STORE_TRIGGERS } from '../shops/stores.js';
 
 const logger = createLogger({ name: 'scenes' });
 
@@ -50,7 +50,11 @@ export function sceneActionHandlers({ watcher, wallet }) {
       }
       const status = watcher.status(store);
       if (!status) {
-        throw new Error(`Opening hours of "${store.name}" not understood: ${store.error?.message}`);
+        const why =
+          store.error instanceof LookupError
+            ? describeHoursError(store.error).en
+            : `not understood: ${store.error?.message}`;
+        throw new Error(`Opening hours of "${store.name}": ${why}`);
       }
       return {
         open: status.open,

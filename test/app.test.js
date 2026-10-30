@@ -7,18 +7,29 @@ import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
 import { validateWidgetContent, validateWidgetImage } from '@gladysassistant/integration-sdk';
 import { createApp } from '../src/app.js';
 import { cardIds, storeIds } from '../src/devices/index.js';
-import { fakeClock, MARIE, memoryStorage, PAUL } from './helpers/fixtures.js';
+import {
+  fakeClock,
+  fakeOverpass,
+  HOUSES,
+  MARIE,
+  memoryCache,
+  memoryStorage,
+  OSM_SHOPS,
+  PAUL,
+} from './helpers/fixtures.js';
 
 const CARDS = `Marie=${MARIE}; Paul=${PAUL}`;
 const STORES = 'Leclerc = Mo-Sa 08:30-20:00; PH off | Pharmacie = Mo-Fr 09:00-19:00';
 
 async function setup({ config = { stores: STORES, loyalty_cards: CARDS }, balances = {} } = {}) {
-  const gladys = createFakeGladys({ config });
+  const gladys = createFakeGladys({ config, houses: HOUSES });
   const clock = fakeClock('2026-10-30T18:00:00Z'); // Friday 19:00 in Paris
   const storage = memoryStorage(balances);
-  const app = createApp(gladys, { timers: false, now: clock, storage });
+  const fetch = fakeOverpass(OSM_SHOPS);
+  const hoursCache = memoryCache();
+  const app = createApp(gladys, { timers: false, now: clock, storage, fetch, hoursCache });
   await gladys.connect();
-  return { gladys, app, clock, storage };
+  return { gladys, app, clock, storage, fetch, hoursCache };
 }
 
 test('on connection: one device per store and per card, with their states', async () => {
@@ -65,12 +76,68 @@ test('action test_configuration reports every store and the cards', async () => 
   assert.equal(lines[0], 'Leclerc : Ouvert, ferme à 20:00.');
   assert.equal(lines[1], 'Pharmacie : Fermé, ouvre lundi à 09:00.');
   assert.match(lines[2], /^Bio : Les horaires ne sont pas compris/);
-  assert.equal(lines[3], 'Non compris (Nom = horaires attendu) : oops.');
+  assert.equal(lines[3], 'Non compris (Nom = horaires ou Nom = auto attendu) : oops.');
   assert.equal(
     lines[4],
     '2 carte(s) de fidélité : Marie (EAN-13), Paul (Code 128). Non compris : Zoé=abc.',
   );
   assert.ok(ack.data.message.de && ack.data.message.es);
+});
+
+test('stores written auto get their hours from OpenStreetMap, near the houses', async () => {
+  const { gladys, fetch } = await setup({
+    config: {
+      stores: 'Leclerc = auto | Boulangerie = auto: Boulangerie Dupont | Bio = 24/7 | Lidl = auto',
+    },
+  });
+  assert.equal(fetch.queries.length, 1);
+  assert.equal(gladys.fake.lastState(storeIds(gladys, 'leclerc').feature('open')), 1);
+  assert.equal(gladys.fake.lastState(storeIds(gladys, 'bio').feature('open')), 1);
+
+  const lines = (await gladys.fake.action('test_configuration', {})).data.message.fr.split('\n');
+  assert.equal(
+    lines[0],
+    'Leclerc : Ouvert, ferme à 20:00. (OpenStreetMap : E.Leclerc, Bourges · 1,3 km, Mo-Sa 08:30-20:00; PH off)',
+  );
+  assert.match(
+    lines[1],
+    /^Boulangerie : Les horaires trouvés sur OpenStreetMap ne sont pas compris/,
+  );
+  assert.match(lines[3], /^Lidl : Aucun commerce de ce nom .* 10 km de vos maisons/);
+
+  for (const language of ['en', 'fr', 'de', 'es']) {
+    for (const id of [undefined, 'leclerc', 'boulangerie', 'lidl']) {
+      const store = id && storeIds(gladys, id).device;
+      const ack = await gladys.fake.widgetGet('store_hours', { settings: { store }, language });
+      assert.deepEqual(validateWidgetContent(ack.data.content), [], `${id} ${language}`);
+    }
+  }
+  const all = await gladys.fake.widgetGet('store_hours', { settings: {}, language: 'fr' });
+  assert.deepEqual(
+    all.data.content.components[0].items.map((item) => item.value.fr ?? item.value),
+    ['Ouvert · ferme à 20:00', 'Horaires non compris', 'Ouvert', 'Horaires introuvables'],
+  );
+  const one = await gladys.fake.widgetGet('store_hours', {
+    settings: { store: storeIds(gladys, 'leclerc').device },
+    language: 'fr',
+  });
+  const items = one.data.content.components.find((component) => component.type === 'status').items;
+  assert.deepEqual(items.at(-1).value, 'E.Leclerc, Bourges · 1,3 km');
+
+  const ask = await gladys.fake.sceneAction('is_store_open', {
+    device: storeIds(gladys, 'lidl').device,
+  });
+  assert.equal(ask.success, false);
+
+  // Saving the form again does not ask OpenStreetMap again.
+  await gladys.fake.configUpdated({ stores: 'Leclerc = auto | Bio = 24/7' });
+  assert.equal(fetch.queries.length, 1);
+  assert.equal(gladys.fake.lastState(storeIds(gladys, 'leclerc').feature('open')), 1);
+});
+
+test('no store written auto: the houses and OpenStreetMap are left alone', async () => {
+  const { fetch } = await setup();
+  assert.equal(fetch.queries.length, 0);
 });
 
 test('scene action is_store_open, per store', async () => {

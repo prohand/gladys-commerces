@@ -19,7 +19,13 @@ import { MAX_BALANCE } from '../devices/index.js';
 import { pick } from '../i18n.js';
 import { barcodePng, cardModules } from '../shops/barcode.js';
 import { formatNumber } from '../shops/cards.js';
-import { describeHoursError, describeToday, describeWhen } from '../shops/stores.js';
+import {
+  describeHoursError,
+  describeHoursShort,
+  describePlace,
+  describeToday,
+  describeWhen,
+} from '../shops/stores.js';
 
 const logger = createLogger({ name: 'widgets' });
 
@@ -56,13 +62,6 @@ function statusLine(status, language) {
   return clip(`${state} · ${verb} ${describeWhen(status.next, language)}`, 40);
 }
 
-const NOT_UNDERSTOOD = {
-  en: 'Hours not understood',
-  fr: 'Horaires non compris',
-  de: 'Zeiten nicht verstanden',
-  es: 'Horario no entendido',
-};
-
 /** Every store on one status list. */
 function buildStoresOverview(watcher, language) {
   return {
@@ -74,7 +73,7 @@ function buildStoresOverview(watcher, language) {
           const status = watcher.status(store);
           return {
             label: clip(store.name, 40),
-            value: status ? statusLine(status, language) : NOT_UNDERSTOOD,
+            value: status ? statusLine(status, language) : describeHoursShort(store.error),
             icon: 'shopping-bag',
             color: !status
               ? WIDGET_COLORS.WARNING
@@ -139,6 +138,15 @@ function buildStoreDetail(watcher, store, language) {
     icon: 'calendar',
     color: WIDGET_COLORS.NEUTRAL,
   });
+  const place = describePlace(store.place, language);
+  if (place) {
+    items.push({
+      label: 'OpenStreetMap',
+      value: clip(place, 40),
+      icon: 'map-pin',
+      color: WIDGET_COLORS.NEUTRAL,
+    });
+  }
   components.push({ type: 'status', items });
   // The minute count moves every minute; the core re-pulls at the TTL.
   return { ttl_seconds: 60, components };

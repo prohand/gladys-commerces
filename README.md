@@ -51,6 +51,13 @@ evaluated on the Europe/Paris clock by `src/shops/hours.js`. `src/shops/stores.j
 publishes each shop's state every minute and fires the "soon" triggers once per
 change. A shop is keyed by the slug of its name.
 
+A shop written `Name = auto` gets its hours from OpenStreetMap instead:
+`src/shops/finder.js` asks the Overpass API, once a day, for the shops with an
+`opening_hours` tag whose name or brand matches, within a radius of each Gladys
+house (`getHouses()`, manifest `location: true`), and keeps the nearest one. The
+results are cached in `/data/hours.json`. It is the only network call, and only
+made for `auto` shops.
+
 **Loyalty cards.** Retailers offer no public API for their cards: reading a balance
 would take the customer's password and an unofficial interface, which this
 integration refuses to depend on. The user types the card numbers
@@ -72,6 +79,7 @@ scene action, kept in `/data/cards.json` and published as a Gladys currency feat
 │  ├─ shops/
 │  │  ├─ hours.js                #   opening_hours parser, French holidays, status
 │  │  ├─ stores.js               #   the shop list, per-minute state and triggers
+│  │  ├─ finder.js               #   `auto` shops: hours from OpenStreetMap
 │  │  ├─ cards.js                #   card list, balances in /data
 │  │  ├─ barcode.js              #   EAN-13 and Code 128 modules, PNG
 │  │  └─ png.js                  #   minimal grayscale PNG writer
