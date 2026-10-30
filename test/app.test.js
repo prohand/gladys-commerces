@@ -81,8 +81,9 @@ test('action test_configuration reports every store and the cards', async () => 
     lines[3],
     'Non compris, il manque le nom du commerce (ex. Leclerc, ou Leclerc = Mo-Sa 08:30-20:00) : auto.',
   );
+  assert.equal(lines[4], "Onglet Découverte : aucun type de commerce coché, rien n'est proposé.");
   assert.equal(
-    lines[4],
+    lines[5],
     '2 carte(s) de fidélité : Marie (EAN-13), Paul (Code 128). Non compris : Zoé=abc.',
   );
   assert.ok(ack.data.message.de && ack.data.message.es);
@@ -152,6 +153,8 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
     },
   });
   assert.equal(fetch.queries.length, 1);
+  // `out tags` would drop the coordinates of the nodes (most pharmacies).
+  assert.match(fetch.queries[0], /\nout center;$/);
   const names = gladys.fake.discoveredDevices.map((device) => device.name);
   assert.deepEqual(names.slice(0, 1), ['Bio']);
   assert.deepEqual(
@@ -176,6 +179,7 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
   await gladys.fake.deviceCreated({ ...leclerc, name: 'Leclerc' });
   assert.equal(gladys.fake.lastState(storeIds(gladys, 'osm-w101').feature('open')), 1);
   const lines = (await gladys.fake.action('test_configuration', {})).data.message.fr.split('\n');
+  assert.match(lines[2], /^Onglet Découverte : 4 commerce\(s\) trouvé\(s\) autour de /);
   assert.equal(
     lines[1],
     'Leclerc : Ouvert, ferme à 20:00. (OpenStreetMap : E.Leclerc, Bourges · 1,3 km, Mo-Sa 08:30-20:00; PH off)',
@@ -224,6 +228,44 @@ test('Discovery tab: shops near each house, the ones created become stores', asy
   await gladys.fake.deviceDeleted({ ...leclerc, name: 'Leclerc' });
   const after = (await gladys.fake.action('test_configuration', {})).data.message.fr;
   assert.ok(!after.includes('Leclerc :'), after);
+});
+
+test('test_configuration says why the Discovery tab is empty, and tries again', async () => {
+  const gladys = createFakeGladys({
+    config: { stores: '', discover_kinds: ['pharmacy'], search_houses: ['campagne'] },
+    houses: [{ ...HOUSES[1], latitude: null, longitude: null }],
+  });
+  const fetch = fakeOverpass(OSM_SHOPS);
+  fetch.down = true;
+  createApp(gladys, {
+    timers: false,
+    now: fakeClock('2026-10-30T18:00:00Z'),
+    storage: memoryStorage(),
+    fetch,
+    hoursCache: memoryCache(),
+  });
+  await gladys.connect();
+  const test = async () =>
+    (await gladys.fake.action('test_configuration', {})).data.message.fr.split('\n');
+  assert.deepEqual((await test()).slice(0, 2), [
+    'Aucun commerce créé ou écrit pour le moment.',
+    "Onglet Découverte : aucune maison cherchée n'a d'emplacement : renseignez-le dans Paramètres → Maisons.",
+  ]);
+  // The house gets its location, OpenStreetMap is down, then back.
+  gladys.fake.houses = HOUSES;
+  assert.match(
+    (await test())[1],
+    /^Onglet Découverte : OpenStreetMap n'a pas pu être joint \(network down\)/,
+  );
+  fetch.down = false;
+  assert.equal(
+    (await test())[1],
+    'Onglet Découverte : 1 commerce(s) trouvé(s) autour de Campagne : créez ceux où vous allez.',
+  );
+  assert.equal(fetch.queries.length, 2);
+  assert.ok(
+    gladys.fake.discoveredDevices.some((device) => device.name.startsWith('Pharmacie du Marché')),
+  );
 });
 
 test('scene action is_store_open, per store', async () => {

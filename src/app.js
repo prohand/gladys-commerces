@@ -53,9 +53,10 @@ export function createApp(gladys, deps = {}) {
    * offer in the Discovery tab and the new states. Never throws: a store
    * without hours says why on the screens.
    */
-  async function findHours() {
+  async function findHours({ force = false } = {}) {
     try {
       const changed = await finder.refresh({
+        force,
         searches: watcher.searches,
         radiusKm: config.search_radius_km,
         kinds: config.discover_kinds,
@@ -94,7 +95,7 @@ export function createApp(gladys, deps = {}) {
   }
 
   gladys.onScanRequest(async () => {
-    await findHours();
+    await findHours({ force: true });
     await gladys.publishDiscoveredDevices(devices());
   });
 
@@ -121,7 +122,14 @@ export function createApp(gladys, deps = {}) {
     watcher.setDevices(gladys.devices.filter((other) => other.external_id !== device.external_id));
   });
 
-  for (const [key, handler] of Object.entries(actionHandlers({ watcher, wallet }))) {
+  const actions = actionHandlers({
+    watcher,
+    wallet,
+    finder,
+    config: () => config,
+    findHours: () => findHours({ force: true }),
+  });
+  for (const [key, handler] of Object.entries(actions)) {
     gladys.onAction(key, handler);
   }
 
