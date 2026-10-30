@@ -12,6 +12,7 @@ import {
   PER_KIND,
   nameMatches,
   nearestShops,
+  houseBox,
   overpassQuery,
   overpassChUrl,
   overpassKey,
@@ -67,7 +68,7 @@ test('the query holds only letters, digits and accent classes from the user', ()
     radiusMeters: 10000,
   });
   assert.ok(!query.includes('");'), query);
-  assert.match(query, /around:10000,47\.081,2\.3988/);
+  assert.ok(query.includes('nwr["opening_hours"](46.99091,2.2665,47.17109,2.5311);'), query);
   assert.ok(query.includes('["name"~"b(o|ô|ö|Ô|Ö)b.*(o|ô|ö|Ô|Ö)(u|ù|û|ü|Ù|Û|Ü)t",i]'), query);
 });
 
@@ -276,28 +277,49 @@ test('kinds: a tag, its values, an extra tag', () => {
   assert.equal(kindOf({ shop: 'car' }), null);
 });
 
-test('the query: kinds per house, created shops by id', () => {
+test('the query: the shops of the boxes read once, the kinds among them, created shops by id', () => {
   const query = overpassQuery({
     kinds: ['supermarket', 'bakery', 'recycling_centre'],
     known: ['w101', 'n203', 'n9', 'x1'],
     houses: HOUSES,
     radiusMeters: 5000,
   });
-  assert.ok(
-    query.includes(
-      'nwr["opening_hours"]["name"]["shop"~"^(supermarket|bakery|pastry)$"](around:5000,47.081,2.3988);',
-    ),
-    query,
+  assert.equal(
+    query.split('\n').slice(0, 5).join('\n'),
+    [
+      '[out:json][timeout:50];',
+      '(',
+      '  nwr["opening_hours"](47.03595,2.33265,47.12605,2.46495);',
+      '  nwr["opening_hours"](47.17685,2.00228,47.26695,2.13492);',
+      ')->.shops;',
+    ].join('\n'),
   );
+  assert.ok(query.includes('  nwr.shops["name"]["shop"~"^(supermarket|bakery|pastry)$"];'), query);
   assert.ok(
-    query.includes(
-      '["amenity"~"^(recycling)$"]["recycling_type"="centre"](around:5000,47.2219,2.0686);',
-    ),
+    query.includes('  nwr.shops["name"]["amenity"~"^(recycling)$"]["recycling_type"="centre"];'),
   );
+  assert.ok(!query.includes('around'));
   assert.ok(query.includes('  node(id:203,9);'));
   assert.ok(query.includes('  way(id:101);'));
   assert.ok(!query.includes('relation') && !query.includes('x1'));
   assert.ok(!query.includes('"brand"'), 'no search, no name line');
+
+  // Only created shops: read by id, no box.
+  const known = overpassQuery({ known: ['n9'], houses: HOUSES, radiusMeters: 5000 });
+  assert.equal(known, '[out:json][timeout:50];\n(\n  node(id:9);\n);\nout center;');
+});
+
+test('the box of a house holds the circle of the radius', () => {
+  const [south, west, north, east] = houseBox(HOUSES[0], 10000).split(',').map(Number);
+  for (const corner of [
+    { latitude: north, longitude: HOUSES[0].longitude },
+    { latitude: HOUSES[0].latitude, longitude: east },
+    { latitude: south, longitude: HOUSES[0].longitude },
+    { latitude: HOUSES[0].latitude, longitude: west },
+  ]) {
+    const meters = distanceMeters(HOUSES[0], corner);
+    assert.ok(meters >= 10000 && meters <= 10050, meters);
+  }
 });
 
 test('discovery: per house and per kind, the nearest ones, named shops only', () => {
@@ -333,7 +355,8 @@ test('discovery: only the houses picked, the created shops kept up to date', asy
     finder.nearby.map((shop) => shop.name),
     ['Pharmacie du Marché'],
   );
-  assert.ok(fetch.queries[0].includes('47.2219') && !fetch.queries[0].includes('47.081,'));
+  assert.ok(fetch.queries[0].includes(houseBox(HOUSES[1], 10000)));
+  assert.ok(!fetch.queries[0].includes(houseBox(HOUSES[0], 10000)));
   // A shop created, then gone from the offer (no more kind): asked by id.
   await finder.refresh({ radiusKm: 10, kinds: [], houses: ['campagne'], known: ['n202'] });
   assert.equal(fetch.queries.length, 2);
